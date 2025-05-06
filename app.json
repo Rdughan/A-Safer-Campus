@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "MineWatch",
-    "slug": "MineWatch",
+    "name": "A_Safer_Campus",
+    "slug": "A_Safer_Campus",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -19,7 +19,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "edgeToEdgeEnabled": true
     },
     "web": {
       "favicon": "./assets/favicon.png"

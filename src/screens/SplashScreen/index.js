@@ -10,6 +10,7 @@ const SplashScreen = () => {
         style={styles.logo} 
       />
       <Text style={styles.logoName}>SaferCampus</Text>
+      <Text style ={styles.waitText}>Please wait...</Text>
     </View>
   )
 }
@@ -36,5 +37,10 @@ const styles = StyleSheet.create({
         height: 150, // Adjust height
         
       },
+      waitText:{
+        color:'white',
+        position:'absolute',
+        bottom:10
+      }
 
 })

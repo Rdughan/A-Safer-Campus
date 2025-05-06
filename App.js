@@ -4,8 +4,8 @@ import useLoadFonts from './src/hooks/useLoadFonts';
 import HomeScreen from './src/screens/HomeScreen';
 import SplashScreen from './src/screens/SplashScreen';
 import OnboardingScreen1 from './src/screens/OnboardingScreen1';
-
-
+import OnboardingScreen2 from './src/screens/OnboardingScreen2';
+import SettingsScreen from './src/screens/SettingsScreen';
 
 export default function App() {
   const fontsLoaded = useLoadFonts();
@@ -14,7 +14,7 @@ export default function App() {
   }
   return (
     <View style={styles.container}>
-     <OnboardingScreen1/>
+     <SettingsScreen/>
       <StatusBar style="auto" />
     </View>
   );

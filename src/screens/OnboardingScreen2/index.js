@@ -2,7 +2,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import React from 'react'
 import {Image} from 'react-native'
 
-const OnboardingScreen1 = () => {
+const OnboardingScreen2 = () => {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
@@ -13,8 +13,8 @@ const OnboardingScreen1 = () => {
      <View style ={styles.imageContainer}>
       <View style ={styles.circle}></View>
        <Image 
-          source={require('./media/handImage.png')} 
-          style={styles.handimage}
+          source={require('./media/Layer1.png')} 
+          style={styles.girlImage}
         />
      </View>
 
@@ -37,7 +37,7 @@ const OnboardingScreen1 = () => {
   )
 }
 
-export default OnboardingScreen1
+export default OnboardingScreen2
 
 const styles = StyleSheet.create({
     container:{
@@ -79,11 +79,11 @@ const styles = StyleSheet.create({
       top:'-24%'
       
     },
-    handimage:{
-      width:'110%',
-      height:'110%',
+    girlImage:{
+      width:'85%',
+      height:'85%',
       position:'absolute',
-      top:-85
+      
     },
     infoContainer:{
       width:'100%',
