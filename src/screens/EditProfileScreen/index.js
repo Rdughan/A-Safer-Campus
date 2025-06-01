@@ -3,7 +3,7 @@ import React, { useState }from 'react'
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import InputField from '../../components/TextInput';
 
-const EditProfileScreen = () => {
+const EditProfileScreen = ({navigation}) => {
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -13,7 +13,7 @@ const EditProfileScreen = () => {
   return (
     <View style={styles.mainContainer}>
       <View style={styles.headerContainer}>
-         <TouchableOpacity style ={styles.arrow}>    
+         <TouchableOpacity style ={styles.arrow} onPress={() => navigation.goBack()}>    
             <Ionicons name="arrow-back" size={20} color="#000" />     
          </TouchableOpacity>
 
@@ -24,10 +24,16 @@ const EditProfileScreen = () => {
 
       </View>
 
+    <TouchableOpacity style={{height:100, width:100, alignSelf:'center' }}>
       <Image 
              source={require('./media/pfp.png')} 
-             style={styles.pfp}
+             style={styles.pfp}   
        />
+        <View style={styles.cameraIconContainer}>
+          <Ionicons name="camera" size={20} color="#000" />
+        </View>
+    </TouchableOpacity>    
+       
 
         <View style={styles.inputView}>
           <Text style ={styles.inputTitle}>Name</Text>
@@ -52,16 +58,13 @@ const styles = StyleSheet.create({
     },
     headerContainer:{
         width:'100%',
-        backgroundColor:'white',
         height:130,
         flexDirection:'row',  
-        
         alignItems:'center'  
     },
     arrow:{
     left:20,
-    top:15,
-       
+    top:15,     
     },
     editProfileText:{
       left:'33%',
@@ -80,15 +83,31 @@ const styles = StyleSheet.create({
       height:100,
       width:100,
       borderRadius:50,
-      alignSelf:'center'
     },
     inputView:{
       gap:20,
       alignSelf:'center',
-      marginTop:60
+      marginTop:40
     },
     inputTitle:{
        fontSize:22,
       fontFamily:'Montserrat-Bold',
-    }
+    },
+     cameraIconContainer: {
+    position: 'absolute',
+    width:40,
+    height:40,
+    alignItems:'center',
+    justifyContent:'center',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 6,
+    elevation: 4, // Shadow for Android
+    shadowColor: '#000', // Shadow for iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    right:0,
+    bottom:0,
+  },
 })

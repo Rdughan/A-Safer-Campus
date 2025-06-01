@@ -4,7 +4,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import NotificationItem from '../../components/NotificationItem';
 import {NotificationData} from '../../components/Data/NotificationData.js'
 
-const NotificationsScreen = () => {
+const NotificationsScreen = ({navigation}) => {
   return (
     <View style={styles.mainContainer}>
      <View style ={styles.headerContainer}>
@@ -13,7 +13,7 @@ const NotificationsScreen = () => {
                         source={require('./media/abstract.png')} 
                         style={styles.abstractImage}
                       />
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
                      <Ionicons name="arrow-back" size={20} color="black" style ={styles.backArrow} />
                  </TouchableOpacity>
                  <View style={{flexDirection:'row' , gap:7, alignItems:'center', justifyContent:'c'}}>
@@ -43,7 +43,8 @@ const styles = StyleSheet.create({
      headerContainer:{
         backgroundColor:'#Add8e6',
         height:'17%', 
-        overflow: 'hidden'
+        overflow: 'hidden',
+        marginBottom:10,
     },
     backArrow:{
        fontSize:25,

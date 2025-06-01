@@ -2,13 +2,15 @@ import { StyleSheet, Text, TouchableOpacity, View,ScrollView } from 'react-nativ
 import React from 'react'
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import SettingsOption from '../../components/SettingsOption';
-import CustomButton from '../../components/CustomButton';
+import CustomButton from '../../components/CustomButton'
+import PrivacyScreen from '../PrivacyScreen';
+import ReportBugScreen from '../ReportBug';
 
-const SettingsScreen = () => {
+const SettingsScreen = ({navigation}) => {
   return (
     <View style={styles.mainContainer}>
      <View style ={styles.headerContainer}>
-           <TouchableOpacity>
+           <TouchableOpacity onPress={() => navigation.goBack()}>
                 <Ionicons name="arrow-back" size={20} color="black" style ={styles.backArrow} />
             </TouchableOpacity>
             <Text style={styles.settingsText}>Settings</Text>
@@ -16,17 +18,17 @@ const SettingsScreen = () => {
 
   <ScrollView contentContainerStyle={styles.scrollContent}>
      <Text style ={styles.sectionName}>GENERAL</Text>
-         <SettingsOption iconName="person-outline" label="Account" onPress={() => {}} />  
+         <SettingsOption iconName="person-outline" label="Account" onPress={() => navigation.navigate('EditProfileScreen')} />  
         {/* <SettingsOption iconName="lock-closed-outline" label="Privacy" onPress={() => {}} />  */}
-         <SettingsOption iconName="lock-closed-outline" label="Privacy" onPress={() => {}} />
-         <SettingsOption iconName="notifications-outline" label="Notifications" onPress={() => {}}  />
-             <SettingsOption iconName="options-outline" label="Preferences" onPress={() => {}}  />
-         <SettingsOption iconName="information-circle-outline" label="About Us" onPress={() => {}} />
+         <SettingsOption iconName="lock-closed-outline" label="Privacy" onPress={() => navigation.navigate('PrivacyScreen')} />
+             <SettingsOption iconName="options-outline" label="Preferences" onPress={() => navigation.navigate('PreferencesScreen')}  />
+         <SettingsOption iconName="information-circle-outline" label="About Us" onPress={() => navigation.navigate('AboutUsScreen')}  />
          <SettingsOption iconName="trash-outline" label="Delete Account" onPress={() => {}} />
    
     <Text style ={styles.sectionName}>FEEDBACK</Text>
-        <SettingsOption iconName="warning-outline" label="Report a bug" onPress={() => {}} />
+        <SettingsOption iconName="warning-outline" label="Report a bug" onPress={() => navigation.navigate('ReportBugScreen')} />
         <SettingsOption iconName="share-outline" label="Send Feedback" onPress={() => {}}/>
+        
         
         <CustomButton 
         buttonText="Logout"
@@ -37,6 +39,7 @@ const SettingsScreen = () => {
         bottom={-50}
         fontFamily={'Montserrat-Bold'}
       />
+      
       </ScrollView>
     </View>
   )
@@ -47,7 +50,6 @@ export default SettingsScreen
 const styles = StyleSheet.create({
     mainContainer:{
         flex:1,
-        backgroundColor:'white',
         width:'100%'
     },
     headerContainer:{

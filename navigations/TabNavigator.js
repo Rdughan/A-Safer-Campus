@@ -18,7 +18,7 @@ export default function TabNavigator() {
           else if (route.name === 'Settings') iconName = 'settings-outline';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#6200ee',
+        tabBarActiveTintColor: '#239DD6',
         tabBarInactiveTintColor: 'gray',
         headerShown: false,
         tabBarLabelStyle: {

@@ -1,6 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native'
 import React from 'react'
-import {Image} from 'react-native'
 import { useNavigation } from '@react-navigation/native';
 
 const 
@@ -26,7 +25,7 @@ OnboardingScreen1 = ({navigation}) => {
       <TouchableOpacity 
         style={styles.nextContainer} 
         activeOpacity={0.7}
-        onPress={() => navigation.navigate('OnboardingScreen2')} // <-- you can replace this with navigation later
+        onPress={() => navigation.navigate('OnboardingScreen2')}
       >
         <Text style={styles.nextText}>Next</Text>
       </TouchableOpacity>

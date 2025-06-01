@@ -7,6 +7,11 @@ import LoginScreen from '../src/screens/LoginScreen';
 import TabNavigator from './TabNavigator';
 import HomeScreen from '../src/screens/HomeScreen';
 import SignUpScreen from '../src/screens/SignUpScreen';
+import EditProfileScreen from '../src/screens/EditProfileScreen';
+import PreferencesScreen from '../src/screens/PreferencesScreen'
+import PrivacyScreen from '../src/screens/PrivacyScreen';
+import AboutUsScreen from '../src/screens/AboutUsScreen';
+import ReportBugScreen from '../src/screens/ReportBug';
 
 const Stack = createNativeStackNavigator();
 
@@ -30,7 +35,12 @@ export default function RootNavigator() {
           <Stack.Screen name="OnboardingScreen2" component={OnboardingScreen2} />
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="HomeScreen" component={HomeScreen} />
-           <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
+          <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
+          <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
+          <Stack.Screen name="PreferencesScreen" component={PreferencesScreen} />
+          <Stack.Screen name="PrivacyScreen" component={PrivacyScreen} />
+          <Stack.Screen name="AboutUsScreen" component={AboutUsScreen} />
+          <Stack.Screen name="ReportBugScreen" component={ReportBugScreen} />
           <Stack.Screen name="Main" component={TabNavigator} />
         </>
       )}
