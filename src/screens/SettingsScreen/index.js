@@ -38,6 +38,7 @@ const SettingsScreen = ({navigation}) => {
         borderColor={'red'} 
         bottom={-50}
         fontFamily={'Montserrat-Bold'}
+        onPress={handleLogout}
       />
       
       </ScrollView>

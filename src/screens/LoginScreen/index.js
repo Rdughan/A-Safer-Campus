@@ -1,12 +1,61 @@
 import { StyleSheet, Text, View,TextInput,Image,TouchableOpacity } from 'react-native'
 import React, {useState} from 'react'
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import InputField from '../../components/TextInput'; 
+import InputField from '../../components/TextInput';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React,{useState,useEffect} from 'react';
 
 
 const LoginScreen = ({navigation}) => {
   const [email, setEmail] = useState('');
    const [password, setPassword] = useState('');
+   const [loading,setLoading]=useState(false);
+   const [error,setError]=useState("");
+
+  /*const LoginScreen = ({navigation}) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');*/
+
+  useEffect(()=>{
+    const checkToken=async()=>{
+      const token = await AsyncStorage.getItem('token');
+      if (token){
+        navigation.replace('Main');
+      }
+    };
+    checkToken();
+  },[]);
+
+  // Add the function here
+ 
+
+  const handleLogin = async () => {
+    setError("");
+    if (!email || !password) {
+      alert('Please enter both email and password');
+      return;
+    }
+    setLoading(true)
+    try {
+      const response = await fetch('http://192.168.53.95:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        await AsyncStorage.setItem('token', data.token);
+        navigation.replace('Main');
+      } else {
+        setError(data.message || 'Login failed');
+        console.log("Login error:",data);
+      }
+    } catch (err) {
+      setError('Network error');
+      console.log("Network error",err);
+    }
+    setLoading(false);
+  };
 
   return (
     <View style ={styles.mainContainer}>
@@ -35,15 +84,19 @@ const LoginScreen = ({navigation}) => {
                 />
               </View>
 
+              {error?<Text style={{color:'red',textAlign:'center'}}>{error}</Text>:null}
+
               <Text style ={styles.forgotText}> Forgot password?</Text>
               <TouchableOpacity 
                       style={styles.loginContainer} 
                       activeOpacity={0.7}
-                      onPress={() => navigation.replace('Main')}
+                      onPress={handleLogin}
+                      disabled={loading}
 
                     >
-                      <Text style={styles.loginButtonText}>Login</Text>
+                      <Text style={styles.loginButtonText}>{loading? 'Logging in...':'Login'}</Text>
                     </TouchableOpacity>
+
 
               <View style={styles.signUpTextContainer}>
         <Text style={styles.plainText}>Don't have an account? </Text>
@@ -54,6 +107,10 @@ const LoginScreen = ({navigation}) => {
       </View>
     </View>
   )
+  const handleLogout=async()=>{
+    await AsyncStorage.removeItem('token');
+    navigation.replace('LoginScreen');
+  };
 }
 
 export default LoginScreen
