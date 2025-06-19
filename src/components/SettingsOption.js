@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   optionsName: {
     fontSize: 18,
     fontFamily: 'Montserrat-Regular',
-    color: '#888',
+    color: 'black',
     flex: 1,
   },
   optionsArrow: {

@@ -28,10 +28,10 @@ const LoginScreen = ({navigation}) => {
             <Text style ={styles.loginText}>Login</Text>
 
               <View style={styles.inputView}>
-                <InputField placeholder="Email" iconName="email-outline" value={email} onChangeText={setEmail} style={styles.inputOverride} // Optional if you want to modify layout
+                <InputField placeholder="Email" iconName="email-outline" value={email} onChangeText={setEmail} style={styles.inputOverride} 
                 />
 
-                <InputField placeholder="Password" iconName="key-outline" value={password} secureTextEntry={true} onChangeText={setPassword} style={styles.inputOverride} // Optional if you want to modify layout
+                <InputField placeholder="Password" iconName="key-outline" value={password} secureTextEntry={true} onChangeText={setPassword} style={styles.inputOverride}
                 />
               </View>
 
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     width:'100%',
     backgroundColor:'white',
     position:'absolute',
-    height:'73%',
+    height:660,
     bottom:0,
     borderRadius:20,
     alignItems:'center',
@@ -114,11 +114,11 @@ const styles = StyleSheet.create({
       position:'absolute'
     },
     inputOverride:{
-      
+      height:55
     },
     forgotText:{
       color:'#239DD6',
-      marginTop:70,
+      marginTop:130,
       fontFamily:'Montserrat-Bold',
       marginBottom:30
     },
@@ -133,11 +133,11 @@ const styles = StyleSheet.create({
     loginContainer:{
       backgroundColor:'#239DD6',
       width:'60%',
-      height:'auto',
+      height:'7%',
       alignItems:'center',
       justifyContent:'center',
       borderRadius:12,
-      marginTop:40,
+      marginTop:30,
       padding:'10',
            
     },

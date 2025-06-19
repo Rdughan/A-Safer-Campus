@@ -14,12 +14,13 @@ const EditProfileScreen = ({navigation}) => {
     <View style={styles.mainContainer}>
       <View style={styles.headerContainer}>
          <TouchableOpacity style ={styles.arrow} onPress={() => navigation.goBack()}>    
-            <Ionicons name="arrow-back" size={20} color="#000" />     
+            <Ionicons name="arrow-back" size={24} color="#000" />     
          </TouchableOpacity>
 
         <Text style ={styles.editProfileText}>Edit Profile</Text>
-        <TouchableOpacity style={styles.checkmark}>
+        <TouchableOpacity style={styles.checkmark} onPress={() => navigation.goBack()}>
             <Ionicons name="checkmark" size={30} color="#32CD32"  />
+            
         </TouchableOpacity>
 
       </View>
@@ -102,8 +103,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 20,
     padding: 6,
-    elevation: 4, // Shadow for Android
-    shadowColor: '#000', // Shadow for iOS
+    elevation: 4,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 2,

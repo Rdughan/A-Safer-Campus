@@ -1,8 +1,8 @@
-import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native'
+import { StyleSheet, Text, View, Image, TouchableOpacity,Modal } from 'react-native'
 import React, { useState } from 'react'
 import InputField from '../../components/TextInput';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
+import SuccessModal from '../SuccessScreen';
 
 
 const SignUpScreen = ({navigation}) => {
@@ -11,6 +11,24 @@ const SignUpScreen = ({navigation}) => {
   const [password, setPassword] = useState('');
   const [Confirmpassword, setConfirmPassword] = useState('');
   const [Phone, setPhone] = useState('');
+  const [username, setUsername] = useState('Henry');
+
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const handleSignUpPress = () => {
+    // Your signup validation logic
+    
+    // Show the success modal
+    setShowSuccessModal(true);
+    
+    // After 1.5 seconds, hide modal and navigate
+    setTimeout(() => {
+      setShowSuccessModal(false);
+      navigation.navigate('Main');
+    }, 1000);
+  };
+
+  
   
   return (
      
@@ -40,11 +58,15 @@ const SignUpScreen = ({navigation}) => {
               <TouchableOpacity 
                 style={styles.loginContainer} 
                 activeOpacity={0.7}
-                onPress={() => console.log('Next pressed')} 
+                onPress={handleSignUpPress} 
               >
                 <Text style={styles.loginButtonText}>Sign Up</Text>
               </TouchableOpacity>   
-        </View>         
+        </View>   
+            <SuccessModal 
+        visible={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+      />
      </View>
   )
 }
@@ -106,5 +128,23 @@ const styles = StyleSheet.create({
       top:20,
       gap:10
       
-    }
+    },
+     modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+    alignItems: 'center',
+  },
+  welcomeText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#239DD6',
+  },
 })

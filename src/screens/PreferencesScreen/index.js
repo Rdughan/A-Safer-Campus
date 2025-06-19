@@ -13,15 +13,21 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const PRIMARY_BLUE = '#ADD8E6';
 
-const PreferencesScreen = ({ navigation }) => {
+const PreferencesScreen = ({ navigation, route }) => {
   const [darkMode, setDarkMode] = useState(false);
   const [receiveAlerts, setReceiveAlerts] = useState(true);
   const [autoDetectLocation, setAutoDetectLocation] = useState(true);
-  const [mapType, setMapType] = useState(false);
+  const [mapType, setMapType] = useState(route.params?.mapType === 'satellite');
+
+   const handleMapTypeChange = (value) => {
+    const newMapType = value ? 'satellite' : 'standard';
+    setMapType(value);
+    navigation.setParams({ mapType: newMapType });
+  };
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+     
       <View style={styles.headerContainer}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={25} color="black" style={styles.backArrow} />
@@ -37,8 +43,6 @@ const PreferencesScreen = ({ navigation }) => {
           <Switch
             value={darkMode}
             onValueChange={setDarkMode}
-            trackColor={{ false: '#fff', true: PRIMARY_BLUE }}
-            thumbColor={darkMode ? PRIMARY_BLUE : '#fff'}
           />
         </View>
 
@@ -47,8 +51,6 @@ const PreferencesScreen = ({ navigation }) => {
           <Switch
             value={receiveAlerts}
             onValueChange={setReceiveAlerts}
-            trackColor={{ false: '#fff', true: PRIMARY_BLUE }}
-            thumbColor={receiveAlerts ? PRIMARY_BLUE : '#fff'}
           />
         </View>
 
@@ -57,8 +59,7 @@ const PreferencesScreen = ({ navigation }) => {
           <Switch
             value={autoDetectLocation}
             onValueChange={setAutoDetectLocation}
-            trackColor={{ false: '#fff', true: PRIMARY_BLUE }}
-            thumbColor={autoDetectLocation ? PRIMARY_BLUE : '#fff'}
+           
           />
         </View>
 
@@ -66,9 +67,8 @@ const PreferencesScreen = ({ navigation }) => {
           <Text style={styles.label}>Map Type: {mapType ? 'Satellite' : 'Standard'}</Text>
           <Switch
             value={mapType}
-            onValueChange={setMapType}
-            trackColor={{ false: '#fff', true: PRIMARY_BLUE }}
-            thumbColor={mapType ? PRIMARY_BLUE : '#fff'}
+             onValueChange={handleMapTypeChange}
+
           />
         </View>
 

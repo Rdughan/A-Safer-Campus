@@ -16,7 +16,8 @@ import NotificationsScreen from './src/screens/NotificationsScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import SuccessScreen from './src/screens/SuccessScreen';
 import FailedScreen from './src/screens/FailedScreen';
-
+import ReportIncidentScreen from './src/screens/ReportIncidentScreen';
+import { ThemeProvider } from './src/context/ThemeContext';
 export default function App() {
   const fontsLoaded = useLoadFonts();
   if (!fontsLoaded) {
@@ -26,11 +27,12 @@ export default function App() {
    
       // <NotificationsScreen/>
 
-      
+    <ThemeProvider> 
       <NavigationContainer>
         <RootNavigator />
         <StatusBar style="auto" />
        </NavigationContainer>
+    </ThemeProvider>
   );
 }
 

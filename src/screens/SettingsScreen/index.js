@@ -1,46 +1,141 @@
-import { StyleSheet, Text, TouchableOpacity, View,ScrollView } from 'react-native'
-import React from 'react'
+import { StyleSheet, Text, TouchableOpacity, View,ScrollView,Alert, Modal } from 'react-native'
+import React, {useState} from 'react'
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import SettingsOption from '../../components/SettingsOption';
 import CustomButton from '../../components/CustomButton'
 import PrivacyScreen from '../PrivacyScreen';
 import ReportBugScreen from '../ReportBug';
+import LogoutConfirmation from '../../components/LogoutConfirmation'
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import ConfirmDeleteModal from '../../modals/ConfirmDeleteModal';
 
-const SettingsScreen = ({navigation}) => {
+const SettingsScreen = ({ navigation }) => {
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+
+ const handleLogoutPress = () => {
+    setLogoutModalVisible(true); 
+  };
+
+  const handleCancelLogout = () => {
+    setLogoutModalVisible(false);
+  };
+
+  const handleConfirmLogout = () => {
+    setLogoutModalVisible(false); 
+    Alert.alert('Logged Out', 'You have been logged out.'); 
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'LoginScreen' }],
+    });
+    };
+
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeletePress = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to delete your account? This action is permanent.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Continue',
+          onPress: () => setShowDeleteModal(true),
+          style: 'destructive',
+        },
+      ]
+    );
+  };
+
+  const handleConfirmDelete = async (password) => {
+    setIsDeleting(true);
+    
+    try {
+      // Replace with your actual API call
+      const success = await deleteAccountAPI(password);
+      
+      if (success) {
+        Alert.alert(
+          'Account Deleted',
+          'Your account has been permanently removed.',
+          [
+            { 
+              text: 'OK', 
+              onPress: () => navigation.reset({
+                index: 0,
+                routes: [{ name: 'LoginScreen' }]
+              })
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', 'Invalid password or deletion failed');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred during deletion');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
+  // Mock API function - replace with real implementation
+  const deleteAccountAPI = async (password) => {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve(password.length > 5); // Simple mock validation
+      }, 1500);
+    });
+  };
   return (
     <View style={styles.mainContainer}>
-     <View style ={styles.headerContainer}>
-           <TouchableOpacity onPress={() => navigation.goBack()}>
-                <Ionicons name="arrow-back" size={20} color="black" style ={styles.backArrow} />
-            </TouchableOpacity>
-            <Text style={styles.settingsText}>Settings</Text>
-     </View >
+     <BlurView intensity={100} tint="light" style={styles.headerContainer}>
+       <LinearGradient
+         colors={[ '#70C8E6', 'white']} 
+         start={{ x: 0.5, y: 0 }}       
+         end={{ x: 0.5, y: 1 }}         
+          style={StyleSheet.absoluteFillObject}
+       />
+        <Text style={styles.settingsText}>Settings</Text>
+     </BlurView>
 
   <ScrollView contentContainerStyle={styles.scrollContent}>
      <Text style ={styles.sectionName}>GENERAL</Text>
          <SettingsOption iconName="person-outline" label="Account" onPress={() => navigation.navigate('EditProfileScreen')} />  
-        {/* <SettingsOption iconName="lock-closed-outline" label="Privacy" onPress={() => {}} />  */}
          <SettingsOption iconName="lock-closed-outline" label="Privacy" onPress={() => navigation.navigate('PrivacyScreen')} />
              <SettingsOption iconName="options-outline" label="Preferences" onPress={() => navigation.navigate('PreferencesScreen')}  />
          <SettingsOption iconName="information-circle-outline" label="About Us" onPress={() => navigation.navigate('AboutUsScreen')}  />
-         <SettingsOption iconName="trash-outline" label="Delete Account" onPress={() => {}} />
+         <SettingsOption iconName="trash-outline" label="Delete Account" onPress={handleDeletePress} />
    
     <Text style ={styles.sectionName}>FEEDBACK</Text>
         <SettingsOption iconName="warning-outline" label="Report a bug" onPress={() => navigation.navigate('ReportBugScreen')} />
         <SettingsOption iconName="share-outline" label="Send Feedback" onPress={() => {}}/>
         
         
-        <CustomButton 
-        buttonText="Logout"
-        backgroundColor="transparent" 
-        textColor = 'red'
-        borderWidth={2}
-        borderColor={'red'} 
-        bottom={-50}
-        fontFamily={'Montserrat-Bold'}
-      />
+       <TouchableOpacity 
+               style={styles.logoutContainer} 
+               activeOpacity={0.7}
+               onPress={handleLogoutPress} 
+             >
+               <Text style={styles.logoutText}>Logout</Text>
+      </TouchableOpacity>
       
       </ScrollView>
+
+      <LogoutConfirmation
+        visible={logoutModalVisible}
+        onCancel={() => setLogoutModalVisible(false)}
+         onConfirm={handleConfirmLogout} 
+      />
+
+      <ConfirmDeleteModal
+        visible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
     </View>
   )
 }
@@ -50,11 +145,13 @@ export default SettingsScreen
 const styles = StyleSheet.create({
     mainContainer:{
         flex:1,
-        width:'100%'
+        width:'100%',
+        backgroundColor:'white'
     },
-    headerContainer:{
-        backgroundColor:'#Add8e6',
-        height:'17%', 
+    headerContainer: {
+      height: '17%',
+      overflow: 'hidden',
+      
     },
     backArrow:{
        fontSize:25,
@@ -92,5 +189,58 @@ const styles = StyleSheet.create({
     },
     optionsArrow:{
         marginLeft:'60%',  
-    }
+    },
+    logoutContainer:{
+      width:'90%',
+      height: '7%',
+      borderWidth:1,
+      borderRadius:10,
+      borderColor:'red',
+      alignItems:'center',
+      justifyContent:'center',
+      fontFamily:'Montserrat-Regular',
+      backgroundColor:'white',
+      alignSelf:'center',
+       position:'absolute',
+        bottom:60
+      
+    },
+    logoutText:{
+      fontSize:18,
+        fontFamily:'Montserrat-Regular',
+        color:'red',
+       
+    },
+    scrollContent:{
+      height:'100%'
+    },
+     modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    width: '85%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  modalText: {
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  passwordInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 12,
+    marginBottom: 15,
+  }
 })

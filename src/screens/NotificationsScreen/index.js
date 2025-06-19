@@ -3,24 +3,26 @@ import React from 'react'
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import NotificationItem from '../../components/NotificationItem';
 import {NotificationData} from '../../components/Data/NotificationData.js'
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
 const NotificationsScreen = ({navigation}) => {
   return (
     <View style={styles.mainContainer}>
-     <View style ={styles.headerContainer}>
+      <BlurView intensity={100} tint="light" style={styles.headerContainer}>
+            <LinearGradient
+              colors={[ '#70C8E6', 'white']} 
+              start={{ x: 0.5, y: 0 }}       
+              end={{ x: 0.5, y: 1 }}         
+               style={StyleSheet.absoluteFillObject}
+            />
 
-        <Image 
-                        source={require('./media/abstract.png')} 
-                        style={styles.abstractImage}
-                      />
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                     <Ionicons name="arrow-back" size={20} color="black" style ={styles.backArrow} />
-                 </TouchableOpacity>
+                
                  <View style={{flexDirection:'row' , gap:7, alignItems:'center', justifyContent:'c'}}>
                    <Ionicons name="notifications-outline" size={34} color="black" style={styles.notifIcon} />
                   <Text style={styles.notificationsText}>Notifications</Text>
                   </View>
-          </View >
+          </BlurView>
 
         <FlatList
             data={NotificationData}

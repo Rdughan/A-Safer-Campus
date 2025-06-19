@@ -6,25 +6,31 @@ const OnboardingScreen2 = ({navigation}) => {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <Text style={styles.logoName}>SaferCampus</Text>
+            <View style={{flexDirection:'row', alignItems:'center',justifyContent:'center' , gap:2}}>
+                  <Image 
+                  source={require('../SplashScreen/media/logo.png')} 
+                  style={styles.logo}
+                />
+                  <Text style={styles.logoName}>SaferCampus</Text>
+                </View>
         <Text style={styles.slogan}>Making campus safe for all</Text>
       </View>
      
      <View style ={styles.imageContainer}>
       <View style ={styles.circle}></View>
-       <Image 
-          source={require('./media/Layer1.png')} 
-          style={styles.girlImage}
-        />
+        <Image 
+                 source={require('./media/handImage.png')} 
+                 style={styles.handimage}
+               />
      </View>
 
      <View style={styles.infoContainer}>
-      <Text style={styles.info}>All official danger alerts on campus are coming directly to you</Text>
+      <Text style={styles.info}>All official danger alerts on campus coming directly to you</Text>
      
       <TouchableOpacity 
         style={styles.nextContainer} 
         activeOpacity={0.7}
-        onPress={() => navigation.navigate('LoginScreen')} // <-- you can replace this with navigation later
+        onPress={() => navigation.navigate('LoginScreen')} 
       >
         <Text style={styles.nextText}>Next</Text>
       </TouchableOpacity>
@@ -50,7 +56,7 @@ const styles = StyleSheet.create({
     logoName:{
         fontSize:20,
         color:'#239DD6', 
-        fontFamily: 'Montserrat-Regular'
+        fontFamily: 'Montserrat-Bold'
     },
     headerContainer:{
         flex:1,
@@ -68,6 +74,10 @@ const styles = StyleSheet.create({
     top:-200,
    
     },
+     logo:{
+        width:30,
+        height:30,
+    },
 
     circle:{
       width:700,
@@ -79,12 +89,12 @@ const styles = StyleSheet.create({
       top:'-24%'
       
     },
-    girlImage:{
-      width:'100%',
-      height:'100%',
+  
+    handimage:{
+      width:'110%',
+      height:'110%',
       position:'absolute',
-      bottom:40,
-      
+      top:-85
     },
     infoContainer:{
       width:'100%',
@@ -98,12 +108,12 @@ const styles = StyleSheet.create({
     nextContainer:{
       backgroundColor:'#239DD6',
       color:'white',
-      width:'60%',
-      height:'20%',
+      width:'90%',
+      height:'24%',
       alignItems:'center',
       justifyContent:'center',
-      borderRadius:19,
-      bottom:40,
+      borderRadius:10,
+      bottom:50,
       position:'absolute'
            
     },
