@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../src/screens/HomeScreen'
 import SettingsScreen from '../src/screens/SettingsScreen';
@@ -12,7 +12,6 @@ export default function TabNavigator() {
       screenOptions={({ route }) => ({
         tabBarIcon: ({ color, size }) => {
           let iconName;
-
           if (route.name === 'Home') iconName = 'home-outline';
           else if (route.name === 'Notifications') iconName = 'notifications-outline';
           else if (route.name === 'Settings') iconName = 'settings-outline';

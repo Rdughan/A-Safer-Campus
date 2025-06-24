@@ -1,5 +1,8 @@
 // filepath: backend/index.js
 require('dotenv').config(); // Load env variables
+if (!process.env.JWT_SECRET){
+  throw new Error('FATAL ERROR: JWT_SECRET is not set in the environment variables(.env file)');
+}
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -20,7 +23,33 @@ mongoose.connect(MONGO_URI, {
 
 app.use(express.json());
 
-// Routes
+const cors= require('cors');
+const rateLimit = require('express-rate-limit');
+
+app.use(cors());
+app.use(rateLimit({
+  windowsMs:15*60*1000,
+  max:100
+}));
+
+//Global error handler
+app.use((err,req,res,next) => {
+  console.error(err.stack);
+  res.status(500).json({message:'Something went wrong!'});
+});
+
+const reportRoutes = require('./routes/reports');
+app.use('/api/reports', reportRoutes);
+
+const userRoutes = require('./routes/user');
+app.use('/api/user', userRoutes);
+
+const nlpRoutes = require('./routes/nlp');
+app.use('/api/nlp', nlpRoutes);
+
+const jwt = require('jsonwebtoken');
+
+//Routes
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 

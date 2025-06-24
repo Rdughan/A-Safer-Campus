@@ -12,7 +12,7 @@ import {
 import React, { useState } from "react";
 import InputField from "../../components/TextInput";
 import Ionicons from "react-native-vector-icons/Ionicons";
-
+import { useAuth } from '../../context/AuthContext';
 
 
 const SignUpScreen = ({ navigation }) => {
@@ -26,7 +26,7 @@ const SignUpScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   // API Configuration - Make sure this matches your server
-  const API_BASE_URL = "http://192.168.53.95:5000";
+  const API_BASE_URL = process.env.IP_ADDRESS || "http://192.168.118.95:5000";
   const API_TIMEOUT = 30000; // 30 seconds
 
   // Enhanced validation function
@@ -220,10 +220,9 @@ const SignUpScreen = ({ navigation }) => {
           ]
         );
 
-        // Auto-navigate after 2 seconds
-        setTimeout(() => {
-          navigation.navigate("Login");
-        }, 2000);
+        navigation.navigate("Login");
+        
+        
       } else {
         // Handle HTTP error responses
         const errorMessage =

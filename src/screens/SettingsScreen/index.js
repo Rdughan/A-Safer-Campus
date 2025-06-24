@@ -5,6 +5,8 @@ import SettingsOption from '../../components/SettingsOption';
 import CustomButton from '../../components/CustomButton'
 import PrivacyScreen from '../PrivacyScreen';
 import ReportBugScreen from '../ReportBug';
+import { useAuth } from '../../context/AuthContext';
+import LoginScreen from '../LoginScreen';
 
 const SettingsScreen = ({navigation}) => {
   return (

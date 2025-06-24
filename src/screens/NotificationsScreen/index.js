@@ -3,6 +3,8 @@ import React from 'react'
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import NotificationItem from '../../components/NotificationItem';
 import {NotificationData} from '../../components/Data/NotificationData.js'
+import { useAuth } from '../../context/AuthContext';
+import LoginScreen from '../LoginScreen';
 
 const NotificationsScreen = ({navigation}) => {
   return (

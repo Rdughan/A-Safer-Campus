@@ -16,6 +16,10 @@ import NotificationsScreen from './src/screens/NotificationsScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import SuccessScreen from './src/screens/SuccessScreen';
 import FailedScreen from './src/screens/FailedScreen';
+import {AuthProvider} from './src/context/AuthContext';
+
+
+
 
 export default function App() {
   const fontsLoaded = useLoadFonts();
@@ -26,11 +30,11 @@ export default function App() {
    
       // <NotificationsScreen/>
 
-      
+      <AuthProvider>
       <NavigationContainer>
         <RootNavigator />
         <StatusBar style="auto" />
-       </NavigationContainer>
+       </NavigationContainer></AuthProvider>
   );
 }
 
