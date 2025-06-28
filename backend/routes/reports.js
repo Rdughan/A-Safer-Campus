@@ -1,4 +1,4 @@
-const express = require('express');
+/*const express = require('express');
 const router = express.Router();
 const Report = require('../models/Report');
 const auth = require('../middleware/auth'); 
@@ -32,7 +32,7 @@ const auth = require('../middleware/auth');
     console.error('Report submission error:', err);
     res.status(500).json({ message: 'Failed to submit report' });
   }
-});*/
+});
 
 const { body, validationResult } = require('express-validator');
 
@@ -145,5 +145,59 @@ router.get('/heatmap', async (req, res) => {
   }
 });
 
+
+module.exports = router;*/
+
+const express = require('express');
+const router = express.Router();
+const Report = require('../models/Report');
+const User = require('../models/User');
+const haversine = require('haversine-distance'); // npm install haversine-distance
+const fetch = require('node-fetch'); // npm install node-fetch
+const authMiddleware = require('../middleware/auth'); // adjust path as needed
+
+router.post('/', authMiddleware, async (req, res) => {
+  try {
+    // Save the report as usual
+    const report = new Report(req.body);
+    await report.save();
+
+    const { coords } = req.body; // { lat, lng }
+
+    // Find users with a location within 200 meters
+    const users = await User.find({ expoPushToken: { $exists: true, $ne: null }, lastLocation: { $exists: true } });
+    const nearbyUsers = users.filter(user => {
+      if (!user.lastLocation || user.lastLocation.lat == null || user.lastLocation.lng == null) return false;
+      const distance = haversine(
+        { lat: coords.lat, lon: coords.lng },
+        { lat: user.lastLocation.lat, lon: user.lastLocation.lng }
+      );
+      return distance <= 200; // meters
+    });
+
+    // Prepare notifications
+    const messages = nearbyUsers.map(user => ({
+      to: user.expoPushToken,
+      sound: 'default',
+      title: 'Nearby Incident',
+      body: 'A new safety report was submitted near your location.',
+      data: { incident: req.body }
+    }));
+
+    // Send notifications in batch to Expo
+    if (messages.length > 0) {
+      await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(messages)
+      });
+    }
+
+    res.json({ success: true, notified: messages.length });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to submit report or send notifications.' });
+  }
+});
 
 module.exports = router;

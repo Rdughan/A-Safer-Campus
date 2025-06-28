@@ -1,0 +1,114 @@
+KWAME NKRUMAH UNIVERSITY OF SCIENCE AND TECHNOLOGY
+COLLEGE OF SCIENCE
+FACULTY OF PHYSICAL AND COMPUTATIONAL SCIENCE
+ 
+PROJECT PROPOSAL
+FOR CONSIDERATION UNDER
+BACHELOR OF COMPUTER SCIENCE
+(BSc) PROGRAMME
+PROJECT TITLE
+A SAFER CAMPUS
+SUBMITTED BY
+Dughan Richardson - 8547021
+Nigel Tieku Bortey - 8543721
+Henry Arhinkorah - 8536521
+[Dr Linda Banning]
+(Supervisor)
+Table of Contents
+1. Declarations 
+2. Acknowledgements
+3. Dedication
+4. Abstract 
+5. Problem Statement
+6. Objectives
+7. Key Features
+8. Expected Impact
+9.1. Technical Requirements
+9.2. Potential Challenges and Mitigation Strategies
+10. Conclusion
+1. Declarations
+I hereby declare that the project proposal titled A SAFER CAMPUS is an original work
+conducted by Dughan Richardson, Nigel Bortey and Henry Arhinkorah. This proposal is
+submitted in partial fulfillment of the requirements for the Final Year Project and is not intended
+for any other purpose.
+2. Acknowledgements
+I would like to express my sincere gratitude to Dr Linda Banning, whose guidance and support
+were invaluable throughout the creation of this proposal. I would also like to thank my
+colleagues and team members for their collaboration and input, which significantly contributed
+to shaping the vision for A SAFER CAMPUS. Additionally, I extend my thanks to my
+teammates for providing the resources and support necessary to develop this proposal.
+3. Dedication
+This proposal is dedicated to teammates , whose encouragement, creativity and belief in our
+abilities have been a constant source of motivation.
+4. Abstract
+A SAFER CAMPUS is a real-time, user-driven danger alert system that enables students to
+report safety incidents such as robberies, altercations, and encounters with dangerous animals.
+The system will aggregate these reports to generate a heatmap categorizing danger levels in
+different locations based on frequency and severity. By leveraging crowd-sourced data, the
+platform will provide real-time alerts and valuable insights for university security measures.
+5. Problem Statement
+Incidents such as muggings, assaults, and hazardous animal encounters are common in and
+around campus areas. Many of these incidents go unreported, leaving students unaware of
+potential dangers and making it difficult for university authorities to take proactive security
+measures. Current security solutions rely heavily on patrolling and post-incident reports, which
+do not effectively prevent occurrences. A real-time, student-driven alert system can bridge this
+gap by:
+ 1. Increasing situational awareness among students.
+ 2. Providing university authorities with actionable security data.
+ 3. Creating a safer campus environment through informed decision-making.
+6. Objectives
+The primary focus of our proposal include
+1. Developing a mobile or web-based platform where students can report safety incidents in
+real-time.
+2. Categorize incidents based on type (e.g., robbery, assault, snake bite, altercation) and
+severity.
+3. Create a dynamic heatmap displaying dangerous zones, graded with color coding for
+intuitive interaction.
+4. Provide real-time notifications to users based on proximity to recently reported danger
+zones.
+5. Enable security authorities to access and analyze data for improved response and
+preventive measures.
+7. Key Features
+1. User Reporting Interface – Students can report incidents by selecting a category,
+inputting location, time, and a brief description.
+2. Real-time Alerts & Notifications – Users receive instant notifications when they are near
+recently reported danger zones.
+3. Heatmap Visualization – The system will display danger zones with color-coded severity
+levels (e.g., red for high danger, yellow for moderate, green for safe zones).
+4. Data Aggregation & Analysis – University security can view trends over time, allowing
+them to make informed safety decisions.
+5. Anonymous Reporting Option – To encourage more participation while ensuring privacy.
+6. Integration with Emergency Services – Providing quick access to campus security or
+emergency contacts.
+8. Expected Impact
+1. Increased Student Awareness: Real-time alerts and accessible danger zone mapping will
+help students navigate safely.
+2. Data-Driven Security Strategies: The university can use reported data to adjust patrol
+routes and implement targeted safety measures.
+3. Improved Emergency Response: Timely reports can lead to quicker interventions in case
+of emergencies.
+4. Community Engagement: Encouraging student participation in safety initiatives fosters a
+collective security culture.
+9.1 Technical Requirements
+1. Platform: Web and mobile application (Android & iOS)
+2. Technology Stack: React Native (mobile), Node.js (backend), Google Maps API
+(location tracking & heatmap generation)
+3. Database: Firebase or PostgreSQL for real-time data storage
+4. Security Measures: Data encryption, role-based access control, and anonymous reporting
+options
+9.2 Potential Challenges and Mitigation Strategies
+Challenge Mitigation Strategy
+Low user participation Awareness campaigns and incentives
+False reporting Verification mechanisms & user credibility
+scoring
+Privacy concerns Anonymous reporting and strict data
+protection policies
+Technical issues Regular maintenance and prompt
+troubleshooting
+10. Conclusion
+A SAFER CAMPUS represents a transformative step in improving campus security through
+technology and community participation. By implementing a student-driven danger alert system,
+we can create a safer university environment while providing authorities with crucial data to
+enhance security measures. We seek the university’s support in funding and policy endorsement
+to bring this initiative to life.
+We look forward to your support and collaboration in making our campus safer for everyone.

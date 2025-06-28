@@ -13,11 +13,13 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { useAuth } from "../../context/AuthContext";
 import { storage } from "../../utils/storage";
 import * as Location from 'expo-location';
+import { Switch } from "react-native";
 
 const VoiceReport = ({ onReportGenerated, navigation }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [anonymous, setAnonymous] = useState(false);
 
   //Add State for location
   const [latitude,setLatitude] = useState(null);
