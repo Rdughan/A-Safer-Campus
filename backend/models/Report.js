@@ -11,4 +11,8 @@ const reportSchema = new mongoose.Schema({
   coords:{lat:{type:Number},lng:{type:Number}},
 });
 
+
+
+
+
 module.exports = mongoose.model('Report', reportSchema);

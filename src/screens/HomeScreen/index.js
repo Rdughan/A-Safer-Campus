@@ -448,6 +448,13 @@ const HomeScreen = () => {
           )}
         </MapView>
       </View>
+      {/* Add Report Button */}
+      <TouchableOpacity
+        style={styles.reportButton}
+        onPress={() => navigation.navigate('ReportSubmission')}
+      >
+        <Text style={styles.reportButtonText}>Report an Incident</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -519,5 +526,21 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+  },
+  reportButton: {
+    backgroundColor: '#239DD6',
+    borderRadius: 25,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    alignSelf: 'center',
+    elevation: 3,
+  },
+  reportButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });

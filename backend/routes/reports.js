@@ -200,4 +200,16 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/reports - Get all reports for the current user
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.userId; // This is set by your auth middleware
+    const reports = await Report.find({ userId }).sort({ timestamp: -1 });
+    res.json(reports);
+  } catch (err) {
+    console.error('Error fetching user reports:', err);
+    res.status(500).json({ message: 'Failed to fetch reports' });
+  }
+});
+
 module.exports = router;

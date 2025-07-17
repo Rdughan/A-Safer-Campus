@@ -4,6 +4,8 @@ import HomeScreen from '../src/screens/HomeScreen'
 import SettingsScreen from '../src/screens/SettingsScreen';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import NotificationsScreen from '../src/screens/NotificationsScreen';
+import ReportHistoryScreen from '../src/screens/ReportHistoryScreen';
+import ReportStackNavigator from './ReportStackNavigator';
 const Tab = createBottomTabNavigator();
 
 export default function TabNavigator() {
@@ -15,6 +17,7 @@ export default function TabNavigator() {
           if (route.name === 'Home') iconName = 'home-outline';
           else if (route.name === 'Notifications') iconName = 'notifications-outline';
           else if (route.name === 'Settings') iconName = 'settings-outline';
+          else if (route.name === 'Reports') iconName = 'list-outline';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#239DD6',
@@ -28,6 +31,7 @@ export default function TabNavigator() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Reports" component={ReportStackNavigator} />
       <Tab.Screen name="Notifications" component={NotificationsScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
