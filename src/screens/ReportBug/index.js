@@ -26,15 +26,16 @@ const ReportBugScreen = ({ navigation }) => {
 
   return (
     <View style={styles.mainContainer}>
-      {/* Header */}
+      
       <View style={styles.headerContainer}>
+        <View style={{flexDirection:'row', gap:10, position:'absolute', bottom:20, alignItems:'center',gap:15,padding:15 }}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={25} color="black" style={styles.backArrow} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Report a bug</Text>
       </View>
+       </View>
 
-      {/* Content */}
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.label}>Your Email</Text>
         <TextInput
@@ -70,28 +71,37 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     backgroundColor: '#fff',
+    flexDirection:'column',
+   
   },
   headerContainer: {
     backgroundColor: '#ADD8E6',
-    height: '17%',
+    height: '15%',
     marginBottom:20,
+     shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 3.84,
+      borderRadius:20,
+      position:'absolute',
+      width:'100%',
+      zIndex:100,
+     
+      
   },
   backArrow: {
     fontSize: 25,
     color: 'black',
-    left: 20,
-    top: 50,
-    position: 'absolute',
   },
   headerTitle: {
     fontSize: 30,
     fontFamily: 'Montserrat-Bold',
-    left: 20,
-   bottom:20,
-   position:'absolute',
-  },
+    
+    },
   content: {
     padding: 20,
+    position:'relative',
+    bottom:-150
   },
   label: {
     fontSize: 16,
@@ -115,10 +125,11 @@ const styles = StyleSheet.create({
     marginBottom:40
   },
   submitButton: {
-    backgroundColor: '#3b82f6', // blue button
+    backgroundColor: 'black', 
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: 'center',
+    marginTop:30
   },
   submitButtonText: {
     color: '#fff',

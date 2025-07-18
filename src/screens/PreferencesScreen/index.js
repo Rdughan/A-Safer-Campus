@@ -29,10 +29,12 @@ const PreferencesScreen = ({ navigation, route }) => {
     <View style={styles.container}>
      
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={25} color="black" style={styles.backArrow} />
-        </TouchableOpacity>
-        <Text style={styles.headerText}>Preferences</Text>
+        <View style={{flexDirection:'row', alignItems:'center' , gap:20, position:'absolute', bottom:'20%'}}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={25} color="black" style={styles.backArrow} />
+          </TouchableOpacity>
+          <Text style={styles.headerText}>Preferences</Text>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -108,19 +110,23 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     backgroundColor: PRIMARY_BLUE,
-    height: '17%',
-    justifyContent: 'flex-end',
-    paddingBottom: 20,
+    height: '15%',
+   alignItems:'center',
+    flexDirection:'row',
+    shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 3.84,
+      borderRadius:20,
+      
   },
   backArrow: {
     marginLeft: 20,
-    marginTop: Platform.OS === 'android' ? 50 : 60,
   },
   headerText: {
     fontSize: 30,
     fontFamily: 'Montserrat-Bold',
-    marginLeft: 20,
-    marginTop: 10,
+   
   },
   scrollContent: {
     padding: 20,

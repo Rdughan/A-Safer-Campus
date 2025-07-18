@@ -98,6 +98,11 @@ const styles = StyleSheet.create({
     height: '14%',
     justifyContent: 'flex-end',
     paddingBottom: 20,
+     shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 3.84,
+      borderRadius:20,
     
   },
   backArrow: {

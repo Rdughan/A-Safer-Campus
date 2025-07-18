@@ -91,15 +91,9 @@ const SettingsScreen = ({ navigation }) => {
   };
   return (
     <View style={styles.mainContainer}>
-     <BlurView intensity={100} tint="light" style={styles.headerContainer}>
-       <LinearGradient
-         colors={[ '#70C8E6', 'white']} 
-         start={{ x: 0.5, y: 0 }}       
-         end={{ x: 0.5, y: 1 }}         
-          style={StyleSheet.absoluteFillObject}
-       />
+     <View intensity={100} tint="light" style={styles.headerContainer}>  
         <Text style={styles.settingsText}>Settings</Text>
-     </BlurView>
+     </View>
 
   <ScrollView contentContainerStyle={styles.scrollContent}>
      <Text style ={styles.sectionName}>GENERAL</Text>
@@ -149,8 +143,14 @@ const styles = StyleSheet.create({
         backgroundColor:'white'
     },
     headerContainer: {
-      height: '17%',
-      overflow: 'hidden',
+      height: '15%',
+      backgroundColor: '#Add8e6',
+      borderRadius:20,
+      elevation:5,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 3.84,
       
     },
     backArrow:{

@@ -19,8 +19,7 @@ const EditProfileScreen = ({navigation}) => {
 
         <Text style ={styles.editProfileText}>Edit Profile</Text>
         <TouchableOpacity style={styles.checkmark} onPress={() => navigation.goBack()}>
-            <Ionicons name="checkmark" size={30} color="#32CD32"  />
-            
+            <Ionicons name="checkmark" size={30} color="#32CD32"  />   
         </TouchableOpacity>
 
       </View>
@@ -58,26 +57,37 @@ const styles = StyleSheet.create({
         flex:1,
     },
     headerContainer:{
-        width:'100%',
-        height:130,
+        height:'14%',
         flexDirection:'row',  
-        alignItems:'center'  
+        alignItems:'center',
+        backgroundColor: '#ADD8E6',
+         shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 3.84,
+      borderRadius:20,
+      width:'100%',
+      zIndex:100,
+      marginBottom:25,
+      paddingTop:20
+      
     },
     arrow:{
     left:20,
-    top:15,     
+    top:15, 
+      
     },
     editProfileText:{
-      left:'33%',
+      left:'30%',
       top:15,
       textAlign:'center',
       position:'relative',
-      fontSize:22,
+      fontSize:25,
       fontFamily:'Montserrat-Bold',
     },
     checkmark:{
         right:30,
-        top:60,
+        top:70,
         position:'absolute'
     },
     pfp:{

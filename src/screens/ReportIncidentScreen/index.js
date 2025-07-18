@@ -93,15 +93,10 @@ export default function ReportIncidentScreen() {
 
   return (
     <View style={styles.mainContainer}>
-      <BlurView intensity={100} tint="light" style={styles.headerContainer}>
-            <LinearGradient
-              colors={[ '#70C8E6', 'white']} 
-              start={{ x: 0.5, y: 0 }}       
-              end={{ x: 0.5, y: 1 }}         
-               style={StyleSheet.absoluteFillObject}
-            />
+      <View intensity={100} tint="light" style={styles.headerContainer}>
+          
         <Text style={styles.headerTitle}>Report Incident</Text>
-      </BlurView>
+      </View>
       
 
     <ScrollView style={styles.scrollContainer}> 
@@ -225,10 +220,16 @@ const styles = StyleSheet.create({
    
   headerContainer: {
     backgroundColor: '#Add8e6',
-    height: '18%',
+    height: '15%',
      position: 'absolute',
      zIndex: 100,
-     width:'100%'
+     width:'100%',
+     borderRadius:20,
+      elevation:5,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 3.84,
  
   },
   backArrow: {
@@ -242,6 +243,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Montserrat-Bold',
     left: 20,
     top: 70,
+    alignSelf:'c'
   },
 
   toggleRow: {

@@ -12,10 +12,10 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 const AboutUsScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
-      {/* Header */}
+     
       <View style={styles.headerContainer}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} style={styles.backIcon} />
+          <Ionicons name="arrow-back" size={28} style={styles.backIcon} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>About Us</Text>
       </View>
@@ -24,7 +24,7 @@ const AboutUsScreen = ({ navigation }) => {
       <ScrollView contentContainerStyle={styles.content}>
         {/* Image / Logo */}
         <Image
-          source={require('./media/illustration.png')} // Use your own image here
+          source={require('./media/illustration.png')} 
           style={styles.image}
           resizeMode="contain"
         />
@@ -64,18 +64,24 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     backgroundColor: '#ADD8E6',
-    paddingTop: 90,
-    paddingBottom: 20,
+    paddingTop: 60,
+   
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
+    shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 3.84,
+      borderRadius:20,
+      height:'15%'
   },
   backIcon: {
-    marginRight: 10,
+    marginRight: 20,
     color: 'black',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 30,
     fontFamily: 'Montserrat-Bold',
     color: 'black',
   },

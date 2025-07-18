@@ -9,7 +9,7 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
 import { NavigationContainer } from '@react-navigation/native';
-import RootNavigator from './navigations/RootNavigator'; // You'll create this
+import RootNavigator from './navigations/RootNavigator';
 import LogoutConfirmation from './src/components/LogoutConfirmation';
 import PreferencesScreen from './src/screens/PreferencesScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
@@ -24,8 +24,6 @@ export default function App() {
     return null; // Prevents rendering until fonts load
   }
   return (
-   
-      // <NotificationsScreen/>
 
     <ThemeProvider> 
       <NavigationContainer>

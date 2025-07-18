@@ -78,7 +78,7 @@ const HomeScreen = ({ route }) => {
                 showsUserLocation={true}
                 followsUserLocation={true}
                 provider={PROVIDER_GOOGLE}
-                mapType={mapType} // Add this prop to control map type
+                mapType={mapType} // controls map type
             >
                 {/* Custom marker for user location */}
                 {markerCoords && (
@@ -143,12 +143,17 @@ const styles = StyleSheet.create({
     position:'absolute',
     top: 0, 
     zIndex: 10,
-   gap:20
+   gap:20,
+    elevation:5,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 3.84,
     
   },
   logo: {
-    width: 30,  // Adjust width
-    height: 30, // Adjust height
+    width: 30,  
+    height: 30, 
     
   },
   logoName:{
