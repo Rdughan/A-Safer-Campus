@@ -34,9 +34,16 @@ const SignUpScreen = ({ navigation }) => {
     console.log("=== VALIDATING INPUT ===");
     setMessage("");
 
-    if (!email || !password || !Confirmpassword) {
+    if (!username || !email || !password || !Confirmpassword) {
       console.log("Validation failed: All fields are required");
       setMessage("All fields are required");
+      return false;
+    }
+
+    // Username validation
+    if (!username.trim()) {
+      console.log("Validation failed: Username is required");
+      setMessage("Username is required");
       return false;
     }
 
