@@ -13,6 +13,7 @@ import PrivacyScreen from '../src/screens/PrivacyScreen';
 import AboutUsScreen from '../src/screens/AboutUsScreen';
 import ReportBugScreen from '../src/screens/ReportBug';
 import ReportSubmissionScreen from '../src/screens/ReportSubmissionScreen';
+import LocationDetailScreen from '../src/screens/LocationDetailScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -44,6 +45,7 @@ export default function RootNavigator() {
           <Stack.Screen name="PrivacyScreen" component={PrivacyScreen} />
           <Stack.Screen name="AboutUsScreen" component={AboutUsScreen} />
           <Stack.Screen name="ReportBugScreen" component={ReportBugScreen} />
+          <Stack.Screen name="LocationDetail" component={LocationDetailScreen} />
           <Stack.Screen name="Main" component={TabNavigator} />
         </>
       )}

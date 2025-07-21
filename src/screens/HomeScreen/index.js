@@ -252,17 +252,29 @@ import React, { useState, useEffect } from "react";
 import Icon from "react-native-vector-icons/Ionicons";
 import VoiceReport from "../../components/VoiceReport";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import MapView, { UrlTile, Marker, Heatmap } from "react-native-maps";
+import MapView, { UrlTile, Marker, Heatmap, Callout } from "react-native-maps";
 import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 
 const API_BASE_URL = process.env.IP_ADDRESS || "http://192.168.118.95:5000";
 
+const HEATMAP_GRADIENT = {
+  colors: [
+    "#00FF00", // Green (safe)
+    "#FFFF00", // Yellow (moderate)
+    "#FFA500", // Orange (elevated)
+    "#FF0000", // Red (danger)
+  ],
+  startPoints: [0.1, 0.3, 0.6, 1],
+  colorMapSize: 256,
+};
+
 const HomeScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [heatmapData, setHeatmapData] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
+  const [locationSummaries, setLocationSummaries] = useState([]);
   const [expoPushToken, setExpoPushToken] = useState("");
 
   // Register for push notifications
@@ -294,19 +306,32 @@ const HomeScreen = () => {
   const fetchHeatmap = async () => {
     const token = await AsyncStorage.getItem("token");
     const response = await fetch(
-      "http://192.168.118.95:5000/api/reports/heatmap",
+      `${API_BASE_URL}/api/reports/heatmap`,
       {
         headers: { Authorization: `Bearer ${token}` },
       }
     );
     const data = await response.json();
+    // Prepare heatmap points
     setHeatmapData(
       data.heatmap
         .filter((h) => h.coords)
         .map((h) => ({
           latitude: h.coords.lat,
           longitude: h.coords.lng,
-          weight: Math.max(1, h.score),
+          weight: Math.max(1, Math.abs(h.score)),
+        }))
+    );
+    // Prepare location summaries for markers
+    setLocationSummaries(
+      data.heatmap
+        .filter((h) => h.coords)
+        .map((h) => ({
+          location: h.location,
+          coords: h.coords,
+          count: h.count,
+          highestSeverity: h.danger > h.safe ? 'Danger' : 'Safe',
+          score: h.score,
         }))
     );
   };
@@ -387,9 +412,7 @@ const HomeScreen = () => {
       <View style={styles.headerContainer}>
         <View style={styles.logoNameView}>
           <Image
-            source={{
-              uri: "https://cdn-icons-png.flaticon.com/512/4413/4413044.png",
-            }}
+            source={{ uri: "https://cdn-icons-png.flaticon.com/512/4413/4413044.png" }}
             style={styles.logo}
           />
           <Text style={styles.logoName}>SaferCampus</Text>
@@ -416,37 +439,76 @@ const HomeScreen = () => {
             </TouchableOpacity>
           </View>
         </View>
-
-        <MapView
-          style={styles.map}
-          initialRegion={{
-            latitude: 5.6064,
-            longitude: -0.2,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          }}
-          showsUserLocation={true}
-          showsMyLocationButton={true}
-          zoomEnabled={true}
-          zoomControlEnabled={true}
-        >
-          <UrlTile
-            urlTemplate="https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            maximumZ={19}
-            tileSize={256}
+      </View>
+      <MapView
+        style={styles.map}
+        initialRegion={{
+          latitude: 5.6064,
+          longitude: -0.2,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }}
+        showsUserLocation={true}
+        showsMyLocationButton={true}
+        zoomEnabled={true}
+        zoomControlEnabled={true}
+      >
+        <UrlTile
+          urlTemplate="https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maximumZ={19}
+          tileSize={256}
+        />
+        <Heatmap points={heatmapData} gradient={HEATMAP_GRADIENT} />
+        {locationSummaries.map((loc, idx) => (
+          <Marker
+            key={idx}
+            coordinate={{ latitude: loc.coords.lat, longitude: loc.coords.lng }}
+            pinColor={loc.highestSeverity === 'Danger' ? 'red' : 'green'}
+          >
+            <Callout onPress={() => navigation.navigate('LocationDetail', { location: loc })}>
+              <View style={{ minWidth: 120 }}>
+                <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>{loc.location || `Lat: ${loc.coords.lat.toFixed(3)}, Lng: ${loc.coords.lng.toFixed(3)}`}</Text>
+                <Text>Incidents: {loc.count}</Text>
+                <Text>Score: {loc.score.toFixed(2)}</Text>
+                <Text>Level: {loc.highestSeverity}</Text>
+                <TouchableOpacity
+                  style={{ marginTop: 6, backgroundColor: '#239DD6', borderRadius: 6, padding: 6 }}
+                  onPress={() => navigation.navigate('LocationDetail', { location: loc })}
+                >
+                  <Text style={{ color: '#fff', textAlign: 'center' }}>View Details</Text>
+                </TouchableOpacity>
+              </View>
+            </Callout>
+          </Marker>
+        ))}
+        {userLocation && (
+          <Marker
+            coordinate={userLocation}
+            title="You are here"
+            description="This is your current location"
+            pinColor="blue"
           />
-
-          <Heatmap points={heatmapData} />
-
-          {userLocation && (
-            <Marker
-              coordinate={userLocation}
-              title="You are here"
-              description="This is you current location"
-              pinColor="blue"
-            />
-          )}
-        </MapView>
+        )}
+      </MapView>
+      {/* Heatmap Legend */}
+      <View style={styles.legendContainer}>
+        <Text style={styles.legendTitle}>Danger Level</Text>
+        <View style={styles.legendRow}>
+          <View style={[styles.legendColor, { backgroundColor: '#00FF00' }]} />
+          <Text style={styles.legendLabel}>Safe</Text>
+        </View>
+        <View style={styles.legendRow}>
+          <View style={[styles.legendColor, { backgroundColor: '#FFFF00' }]} />
+          <Text style={styles.legendLabel}>Moderate</Text>
+        </View>
+        <View style={styles.legendRow}>
+          <View style={[styles.legendColor, { backgroundColor: '#FFA500' }]} />
+          <Text style={styles.legendLabel}>Elevated</Text>
+        </View>
+        <View style={styles.legendRow}>
+          <View style={[styles.legendColor, { backgroundColor: '#FF0000' }]} />
+          <Text style={styles.legendLabel}>Danger</Text>
+        </View>
       </View>
       {/* Add Report Button */}
       <TouchableOpacity
@@ -466,7 +528,6 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
   },
-
   map: {
     flex: 1,
     width: "100%",
@@ -485,8 +546,8 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   logo: {
-    width: 30, // Adjust width
-    height: 30, // Adjust height
+    width: 30,
+    height: 30,
   },
   logoName: {
     fontSize: 17,
@@ -526,6 +587,41 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+  },
+  legendContainer: {
+    position: 'absolute',
+    bottom: 120,
+    right: 16,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 10,
+    padding: 10,
+    elevation: 4,
+    zIndex: 20,
+    minWidth: 110,
+  },
+  legendTitle: {
+    fontWeight: 'bold',
+    fontSize: 14,
+    marginBottom: 4,
+    color: '#333',
+    textAlign: 'center',
+  },
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  legendColor: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  legendLabel: {
+    fontSize: 13,
+    color: '#333',
   },
   reportButton: {
     backgroundColor: '#239DD6',

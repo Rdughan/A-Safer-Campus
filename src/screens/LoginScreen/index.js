@@ -17,7 +17,7 @@ import { useAuth } from "../../context/AuthContext";
 import * as Location from "expo-location";
 
 
-const API_BASE_URL = process.env.IP_ADDRESS || "http://192.168.118.95:5000";
+ import {API_BASE_URL} from '@env';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
