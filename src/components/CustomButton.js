@@ -32,6 +32,8 @@ const CustomButton = ({
       ]}
       activeOpacity={0.7}
       onPress={onPress}
+      delayPressIn={0}
+      hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
     >
       <Text style={[styles.buttonText, { color: textColor, fontSize }]}>
         {buttonText}
@@ -49,7 +51,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginVertical: 10,
     borderWidth:5,
-    borderColor:'green',
+    
     bottom:0,
   },
   buttonText: {

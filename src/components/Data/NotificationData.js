@@ -13,7 +13,7 @@ export const NotificationData = [
     location: 'Unity Hall, KNUST Campus',
     status: 'Suspects arrested by campus security',
     time: '4hrs ago',
-    image: require('../notifScreenMedia/fire.png'),
+    image: require('../notifScreenMedia/robbery.png'),
   },
   {
     id: '3',
@@ -21,7 +21,7 @@ export const NotificationData = [
     location: 'Tech Junction',
     status: 'Female student last seen in blue hoodie',
     time: '1 day ago',
-    image: require('../notifScreenMedia/fire.png'),
+    image: require('../notifScreenMedia/missing.png'),
   },
-  // Add more notifications as needed...
+  
 ];

@@ -9,10 +9,12 @@ const reportSchema = new mongoose.Schema({
   originalText: { type: String, required: true },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
   coords:{lat:{type:Number},lng:{type:Number}},
+  isAnonymous: { type: Boolean, default: false },
+  status: {
+    type: String,
+    enum: ['pending', 'verified', 'false'],
+    default: 'pending',
+  },
 });
-
-
-
-
 
 module.exports = mongoose.model('Report', reportSchema);

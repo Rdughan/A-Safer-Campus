@@ -7,20 +7,27 @@ OnboardingScreen1 = ({navigation}) => {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <Text style={styles.logoName}>SaferCampus</Text>
+        <View style={{flexDirection:'row', alignItems:'center',justifyContent:'center' , gap:2}}>
+          <Image 
+          source={require('../SplashScreen/media/logo.png')} 
+          style={styles.logo}
+        />
+          <Text style={styles.logoName}>SaferCampus</Text>
+        </View>
         <Text style={styles.slogan}>Making campus safe for all</Text>
       </View>
      
      <View style ={styles.imageContainer}>
       <View style ={styles.circle}></View>
-       <Image 
-          source={require('./media/handImage.png')} 
-          style={styles.handimage}
-        />
+      
+        <Image 
+                  source={require('./media/Layer1.png')} 
+                  style={styles.girlImage}
+                />
      </View>
 
      <View style={styles.infoContainer}>
-      <Text style={styles.info}>All official danger alerts on campus are coming directly to you</Text>
+      <Text style={styles.info}>Feel safer on campus anytime, anywhere and everywhere</Text>
      
       <TouchableOpacity 
         style={styles.nextContainer} 
@@ -61,6 +68,10 @@ const styles = StyleSheet.create({
         borderRadius:25
        
     },
+    logo:{
+        width:30,
+        height:30,
+    },
     slogan:{
       fontFamily:'Montserrat-Regular',
       color:'ash',
@@ -83,11 +94,11 @@ const styles = StyleSheet.create({
       top:'-24%'
       
     },
-    handimage:{
-      width:'110%',
-      height:'110%',
+      girlImage:{
+      width:'100%',
+      height:'100%',
       position:'absolute',
-      top:-85
+      bottom:40, 
     },
     infoContainer:{
       width:'100%',
@@ -101,12 +112,12 @@ const styles = StyleSheet.create({
     nextContainer:{
       backgroundColor:'#239DD6',
       color:'white',
-      width:'60%',
-      height:'20%',
+      width:'90%',
+      height:'24%',
       alignItems:'center',
       justifyContent:'center',
-      borderRadius:19,
-      bottom:40,
+      borderRadius:10,
+      bottom:50,
       position:'absolute'
            
     },

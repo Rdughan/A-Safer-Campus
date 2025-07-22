@@ -1,37 +1,53 @@
-import { StyleSheet, Text, View, Image} from 'react-native'
-import React from 'react'
+import { StyleSheet, Text, View, Image, Modal } from 'react-native';
+import React from 'react';
 
-const SuccessScreen = () => {
+const SuccessModal = ({ visible, onClose }) => {
   return (
-    <View style ={styles.mainContainer}>
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
           <Image 
-                   source={require('./media/successImg.png')} 
-                   style={styles.image}
-                 />
-              <Text style={styles.text}>Success!</Text>
-    </View>
-  )
-}
-
-export default SuccessScreen
+            source={require('./media/successImg.png')} 
+            style={styles.image}
+          />
+          <Text style={styles.text}>Success!</Text>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 const styles = StyleSheet.create({
-    mainContainer:{
-        backgroundColor:'white',
-        flex:1,
-        width:'100%',
-        alignItems:'center',
-        justifyContent:'center',
-        gap:10,
-    },
-     image: {
-        width: 170,  
-        height: 170, 
-        resizeMode:'contain'      
-      },
-       text:{
-        color:'#239DD6',
-        fontSize:30,
-        fontFamily:'Montserrat-Bold',    
-    },
-})
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 30,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '80%',
+  },
+  image: {
+    width: 170,  
+    height: 170, 
+    resizeMode: 'contain',
+    marginBottom: 20,    
+  },
+  text: {
+    color: '#239DD6',
+    fontSize: 30,
+    fontFamily: 'Montserrat-Bold',    
+  },
+});
+
+export default SuccessModal;

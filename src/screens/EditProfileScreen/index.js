@@ -13,6 +13,7 @@ const EditProfileScreen = ({ navigation }) => {
     const [password, setPassword] = useState('');
     const [Phone, setPhone] = useState(user?.phone || '');
 
+<<<<<<< HEAD
     const handleSave = async () => {
         try {
             const response = await fetch('http://192.168.53.95:5000/api/user/update', {
@@ -29,6 +30,19 @@ const EditProfileScreen = ({ navigation }) => {
                 navigation.replace('Login');
                 return;
             }
+=======
+  return (
+    <View style={styles.mainContainer}>
+      <View style={styles.headerContainer}>
+         <TouchableOpacity style ={styles.arrow} onPress={() => navigation.goBack()}>    
+            <Ionicons name="arrow-back" size={24} color="#000" />     
+         </TouchableOpacity>
+
+        <Text style ={styles.editProfileText}>Edit Profile</Text>
+        <TouchableOpacity style={styles.checkmark} onPress={() => navigation.goBack()}>
+            <Ionicons name="checkmark" size={30} color="#32CD32"  />   
+        </TouchableOpacity>
+>>>>>>> origin/main
 
             if (response.ok) {
                 const updatedUser = await response.json();
@@ -87,6 +101,7 @@ const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
     },
+<<<<<<< HEAD
     headerContainer: {
         width: '100%',
         height: 130,
@@ -109,6 +124,41 @@ const styles = StyleSheet.create({
         right: 30,
         top: 60,
         position: 'absolute'
+=======
+    headerContainer:{
+        height:'14%',
+        flexDirection:'row',  
+        alignItems:'center',
+        backgroundColor: '#ADD8E6',
+         shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 3.84,
+      borderRadius:20,
+      width:'100%',
+      zIndex:100,
+      marginBottom:25,
+      paddingTop:20
+      
+    },
+    arrow:{
+    left:20,
+    top:15, 
+      
+    },
+    editProfileText:{
+      left:'30%',
+      top:15,
+      textAlign:'center',
+      position:'relative',
+      fontSize:25,
+      fontFamily:'Montserrat-Bold',
+    },
+    checkmark:{
+        right:30,
+        top:70,
+        position:'absolute'
+>>>>>>> origin/main
     },
     pfp: {
         height: 100,
@@ -141,4 +191,24 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
     },
+<<<<<<< HEAD
+=======
+     cameraIconContainer: {
+    position: 'absolute',
+    width:40,
+    height:40,
+    alignItems:'center',
+    justifyContent:'center',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 6,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    right:0,
+    bottom:0,
+  },
+>>>>>>> origin/main
 })

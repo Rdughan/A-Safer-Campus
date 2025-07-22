@@ -47,6 +47,12 @@ app.use('/api/user', userRoutes);
 const nlpRoutes = require('./routes/nlp');
 app.use('/api/nlp', nlpRoutes);
 
+const securityRoutes = require('./routes/security');
+app.use('/api/security', securityRoutes);
+
+const emergencyRoutes = require('./routes/emergency');
+app.use('/api/emergency', emergencyRoutes);
+
 const jwt = require('jsonwebtoken');
 
 //Routes

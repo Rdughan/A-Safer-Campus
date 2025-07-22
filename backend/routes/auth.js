@@ -5,10 +5,6 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User"); // Adjust path if needed
 
 router.post("/register", async (req, res) => {
-  console.log("REGISTER BODY:", req.body); // <-- Add this line
-  // ...rest of your code
-
-/*router.post("/register", async (req, res) => {*/
   try {
     const { username, email, password, studentId, phone } = req.body;
     console.log("REGISTER BODY:", req.body);
@@ -75,12 +71,16 @@ router.post("/login", async (req, res) => {
     res.status(200).json({
       message: "Login successful",
       token,
-      user: { id: user._id, name: user.name, email: user.email },
+      user: { id: user._id, name: user.username, email: user.email },
     });
   } catch (err) {
     console.error("Error in /login:", err.message);
     res.status(500).json({ message: "Server error" });
   }
+});
+
+router.get("/test", (req, res) => {
+  res.status(200).json({ message: "Auth endpoint is working!" });
 });
 
 module.exports = router;

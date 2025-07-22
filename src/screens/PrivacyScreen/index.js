@@ -19,29 +19,18 @@ const PrivacyScreen = ({ navigation }) => {
   const [notifications, setNotifications] = useState(true);
   const [dataConsent, setDataConsent] = useState(false);
 
-  const confirmDelete = () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you sure you want to delete your account? This action is permanent.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          onPress: () => Alert.alert('Deleted', 'Your account has been removed.'),
-          style: 'destructive',
-        },
-      ]
-    );
-  };
+  
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.headerContainer}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={25} color="black" style={styles.backArrow} />
-        </TouchableOpacity>
-        <Text style={styles.headerText}>Privacy</Text>
+          <View style ={{flexDirection:'row', alignItems:'center'}}> 
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back" size={25} color="black" style={styles.backArrow} />
+            </TouchableOpacity>
+            <Text style={styles.headerText}>Privacy</Text>
+        </View>
       </View>
 
       {/* Scrollable content */}
@@ -53,8 +42,6 @@ const PrivacyScreen = ({ navigation }) => {
           <Switch
             value={isPrivate}
             onValueChange={setIsPrivate}
-            trackColor={{ false: '#ccc', true: '#b3d4ff' }}
-            thumbColor={isPrivate ? PRIMARY_BLUE : '#f4f3f4'}
           />
         </View>
 
@@ -63,8 +50,7 @@ const PrivacyScreen = ({ navigation }) => {
           <Switch
             value={shareLocation}
             onValueChange={setShareLocation}
-            trackColor={{ false: '#ccc', true: '#b3d4ff' }}
-            thumbColor={shareLocation ? PRIMARY_BLUE : '#f4f3f4'}
+          
           />
         </View>
 
@@ -73,8 +59,6 @@ const PrivacyScreen = ({ navigation }) => {
           <Switch
             value={notifications}
             onValueChange={setNotifications}
-            trackColor={{ false: '#ccc', true: '#b3d4ff' }}
-            thumbColor={notifications ? PRIMARY_BLUE : '#f4f3f4'}
           />
         </View>
 
@@ -83,8 +67,6 @@ const PrivacyScreen = ({ navigation }) => {
           <Switch
             value={dataConsent}
             onValueChange={setDataConsent}
-            trackColor={{ false: '#ccc', true: '#b3d4ff' }}
-            thumbColor={dataConsent ? PRIMARY_BLUE : '#f4f3f4'}
           />
         </View>
 
@@ -98,9 +80,7 @@ const PrivacyScreen = ({ navigation }) => {
           <Text style={styles.linkText}>Terms of Service</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.deleteButton} onPress={confirmDelete}>
-          <Text style={styles.deleteText}>Delete Account</Text>
-        </TouchableOpacity>
+     
       </ScrollView>
     </View>
   );
@@ -115,19 +95,25 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     backgroundColor: PRIMARY_BLUE,
-    height: '17%',
+    height: '14%',
     justifyContent: 'flex-end',
     paddingBottom: 20,
+     shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 3.84,
+      borderRadius:20,
+    
   },
   backArrow: {
     marginLeft: 20,
-    marginTop: Platform.OS === 'android' ? 50 : 60,
+   
   },
   headerText: {
     fontSize: 30,
     fontFamily: 'Montserrat-Bold',
     marginLeft: 20,
-    marginTop: 10,
+   
   },
   scrollContent: {
     padding: 20,
@@ -162,19 +148,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: PRIMARY_BLUE,
   },
-  deleteButton: {
-    marginTop: 40,
-    alignSelf: 'center',
-    paddingVertical: 14,
-    width: '60%',
-    borderWidth: 2,
-    borderColor: 'red',
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  deleteText: {
-    fontFamily: 'Montserrat-Bold',
-    fontSize: 18,
-    color: 'red',
-  },
+  
 });

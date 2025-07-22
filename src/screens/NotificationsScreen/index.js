@@ -3,32 +3,32 @@ import React from 'react'
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import NotificationItem from '../../components/NotificationItem';
 import {NotificationData} from '../../components/Data/NotificationData.js'
+<<<<<<< HEAD
 import { useAuth } from '../../context/AuthContext';
 import LoginScreen from '../LoginScreen';
+=======
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+>>>>>>> origin/main
 
 const NotificationsScreen = ({navigation}) => {
   return (
     <View style={styles.mainContainer}>
-     <View style ={styles.headerContainer}>
+      <View intensity={100} tint="light" style={styles.headerContainer}>
+            
 
-        <Image 
-                        source={require('./media/abstract.png')} 
-                        style={styles.abstractImage}
-                      />
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                     <Ionicons name="arrow-back" size={20} color="black" style ={styles.backArrow} />
-                 </TouchableOpacity>
+                
                  <View style={{flexDirection:'row' , gap:7, alignItems:'center', justifyContent:'c'}}>
-                   <Ionicons name="notifications-outline" size={34} color="black" style={styles.notifIcon} />
+                 
                   <Text style={styles.notificationsText}>Notifications</Text>
                   </View>
-          </View >
+          </View>
 
         <FlatList
             data={NotificationData}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <NotificationItem item={item} />}
-            contentContainerStyle={{ paddingBottom: 30 }}
+            contentContainerStyle={{ paddingBottom: 30, marginTop:20}}
         />
     </View>
   )
@@ -44,9 +44,14 @@ const styles = StyleSheet.create({
     },
      headerContainer:{
         backgroundColor:'#Add8e6',
-        height:'17%', 
-        overflow: 'hidden',
-        marginBottom:10,
+        height:'15%', 
+        borderRadius:20,
+         elevation:5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3.84,
+        
     },
     backArrow:{
        fontSize:25,
@@ -54,14 +59,7 @@ const styles = StyleSheet.create({
          left:20,
          top:50,
     },
-    notifIcon:{
-      left:20,
-      top:70,
-      // Optional shadow to "bolden" icon appearance
-      textShadowColor: '#000',
-      textShadowOffset: { width: 0.5, height: 0.5 },
-      textShadowRadius: 1,
-        },
+   
         notificationsText:{ 
           fontSize:30,
           fontFamily:'Montserrat-Bold',

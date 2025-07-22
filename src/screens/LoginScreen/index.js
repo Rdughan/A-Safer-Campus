@@ -128,11 +128,21 @@ const LoginScreen = ({ navigation }) => {
           />
         </View>
 
+<<<<<<< HEAD
         {error ? (
           <Text style={{ color: "red", textAlign: "center" }}>{error}</Text>
         ) : null}
 
         <Text style={styles.forgotText}> Forgot password?</Text>
+=======
+              <View style={styles.inputView}>
+                <InputField placeholder="Email" iconName="email-outline" value={email} onChangeText={setEmail} style={styles.inputOverride} 
+                />
+
+                <InputField placeholder="Password" iconName="key-outline" value={password} secureTextEntry={true} onChangeText={setPassword} style={styles.inputOverride}
+                />
+              </View>
+>>>>>>> origin/main
 
         <TouchableOpacity
           style={styles.loginContainer}
@@ -159,6 +169,7 @@ const LoginScreen = ({ navigation }) => {
 export default LoginScreen;
 
 const styles = StyleSheet.create({
+<<<<<<< HEAD
   mainContainer: {
     flex: 1,
     backgroundColor: "#91D8F7",
@@ -244,6 +255,97 @@ const styles = StyleSheet.create({
   },
   signUpTextContainer: {
     flexDirection: "row",
+=======
+    mainContainer:{
+        flex:1,
+        backgroundColor:'#91D8F7',
+        width:'100%',    
+    },
+    textContainer:{
+      flexDirection:'column',
+      gap:'10%',
+      top:'10%',
+      marginLeft:'10%',
+      position:'absolute'
+    },
+    helloText:{
+      color:'white',
+      fontSize:40,
+      fontFamily:'Montserrat-Bold'
+    },
+    welcomeText:{
+      color:'white',
+      fontFamily:'Montserrat-Bold',
+      fontSize:20,
+    },
+    abstractImage:{
+      top:-5,
+      left:-25,  
+    },
+    drawerContainer:{ 
+    width:'100%',
+    backgroundColor:'white',
+    position:'absolute',
+    height:660,
+    bottom:0,
+    borderRadius:20,
+    alignItems:'center',
+    justifyContent:'center',
+    
+    },
+    illustrationImage:{
+      height:150,
+      width:150,
+      right:10,
+     position:'absolute',
+     zIndex:15,
+     top:'20%'
+    },
+    loginText:{
+      color:'black',
+      fontFamily:'Montserrat-Bold',
+      fontSize:40,
+      padding:'5%',
+      left:10,
+      top:30,
+      position:'absolute'
+    },
+    inputOverride:{
+      height:55
+    },
+    forgotText:{
+      color:'#239DD6',
+      marginTop:130,
+      fontFamily:'Montserrat-Bold',
+      marginBottom:30
+    },
+    inputView:{
+      gap:'25',
+      position:'absolute',
+      width:'100%',
+      alignItems:'center',
+      justifyContent:'center',
+      top:'20%', 
+    },
+    loginContainer:{
+      backgroundColor:'#239DD6',
+      width:'60%',
+      height:'7%',
+      alignItems:'center',
+      justifyContent:'center',
+      borderRadius:12,
+      marginTop:30,
+      padding:'10',
+           
+    },
+    loginButtonText:{
+      color:'white',
+      fontSize:20,
+      fontFamily:'Montserrat-Regular'
+    },
+     signUpTextContainer: {
+    flexDirection: 'row',
+>>>>>>> origin/main
     marginTop: 20,
   },
   plainText: {
