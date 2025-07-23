@@ -12,7 +12,7 @@ import * as Speech from "expo-speech";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useAuth } from "../../context/AuthContext";
 import { storage } from "../../utils/storage";
-import * as Location from 'expo-location';
+import * as Location from "expo-location";
 import { Switch } from "react-native";
 
 const VoiceReport = ({ onReportGenerated, navigation }) => {
@@ -22,17 +22,16 @@ const VoiceReport = ({ onReportGenerated, navigation }) => {
   const [anonymous, setAnonymous] = useState(false);
 
   //Add State for location
-  const [latitude,setLatitude] = useState(null);
-  const [longitude, setLongitude]= useState(null);
-
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
 
   const { logout } = useAuth();
 
   useEffect(() => {
-    (async()=>{
-      let {status}=await Location.requestForegroundPermissionsAsync();
-      if(status!=='granted'){
-        Alert.alert('Permission denied','Location permission is required');
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission denied", "Location permission is required");
         return;
       }
       let location = await Location.getCurrentPositionAsync({});
@@ -68,7 +67,7 @@ const VoiceReport = ({ onReportGenerated, navigation }) => {
     }
   };
 
-  /*const processReport = async () => {
+  const processReport = async () => {
     setIsProcessing(true);
 
     try {
@@ -85,24 +84,11 @@ const VoiceReport = ({ onReportGenerated, navigation }) => {
           },
           body: JSON.stringify({
             transcript,
-            type,
+            type, // Make sure these are defined in your component!
             location,
             severity,
             timestamp: new Date().toISOString(),
           }),
-        }
-      );
-
-      const reportPayload = await summaryResponse.json();
-      const reportResponse = await fetch(
-        "http://192.168.53.95:5000/api/reports",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(reportPayload),
         }
       );
 
@@ -121,15 +107,20 @@ const VoiceReport = ({ onReportGenerated, navigation }) => {
         return;
       }
 
-      const { summary } = await summaryResponse.json();
+      // Parse the summarization response ONCE
+      /*const reportPayload = await summaryResponse.json();*/
 
-      // 2. Submit the summarized report to backend
       const reportPayload = {
         summary,
+        type, // Make sure these are defined in your component!
+        location,
+        severity,
         original: transcript,
-        // Add other required fields here if needed (type, location, severity, etc.)
+        timestamp: new Date().toISOString(),
+        coords: { lat: latitude, lng: longitude }, // Get these from device/location picker
       };
 
+      // 2. Submit the summarized report to backend
       const reportResponse = await fetch(
         "http://192.168.53.95:5000/api/reports",
         {
@@ -167,95 +158,7 @@ const VoiceReport = ({ onReportGenerated, navigation }) => {
     } finally {
       setIsProcessing(false);
     }
-  };*/
-
-const processReport = async () => {
-  setIsProcessing(true);
-
-  try {
-    const token = await storage.getToken();
-
-    // 1. Send transcript to backend for summarization
-    const summaryResponse = await fetch('http://192.168.53.95:5000/api/nlp/summarize', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        transcript,
-        type,      // Make sure these are defined in your component!
-        location,
-        severity,
-        timestamp: new Date().toISOString(),
-      }),
-    });
-
-    if (summaryResponse.status === 401) {
-      logout();
-      if (navigation) navigation.replace('Login');
-      else Alert.alert('Session expired', 'Please log in again.');
-      setIsProcessing(false);
-      return;
-    }
-
-    if (!summaryResponse.ok) {
-      const errorData = await summaryResponse.json();
-      Alert.alert('Error', errorData.message || 'Failed to summarize report');
-      setIsProcessing(false);
-      return;
-    }
-
-    // Parse the summarization response ONCE
-    /*const reportPayload = await summaryResponse.json();*/
-
-    const reportPayload = {
-  summary,
-  type,        // Make sure these are defined in your component!
-  location,
-  severity,
-  original: transcript,
-  timestamp: new Date().toISOString(),
-  coords: { lat: latitude, lng: longitude } // Get these from device/location picker
-};
-
-
-    // 2. Submit the summarized report to backend
-    const reportResponse = await fetch('http://192.168.53.95:5000/api/reports', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(reportPayload),
-    });
-
-    if (reportResponse.status === 401) {
-      logout();
-      if (navigation) navigation.replace('Login');
-      else Alert.alert('Session expired', 'Please log in again.');
-      setIsProcessing(false);
-      return;
-    }
-
-    if (reportResponse.ok) {
-      Alert.alert('Success', 'Report submitted successfully');
-      setTranscript('');
-      if (onReportGenerated) onReportGenerated(reportPayload);
-    } else {
-      const errorData = await reportResponse.json();
-      Alert.alert('Error', errorData.message || 'Failed to submit report');
-    }
-  } catch (error) {
-    console.error('Processing error:', error);
-    Alert.alert(
-      'Processing Error',
-      'Failed to process or submit your report. Please try again.'
-    );
-  } finally {
-    setIsProcessing(false);
-  }
-};  
+  };
 
   return (
     <View style={styles.container}>
@@ -278,10 +181,10 @@ const processReport = async () => {
       )}
 
       {latitude && longitude ? (
-  <Text style={{ marginTop: 10, color: '#666', fontSize: 12 }}>
-    Location: {latitude.toFixed(5)}, {longitude.toFixed(5)}
-  </Text>
-) : null}
+        <Text style={{ marginTop: 10, color: "#666", fontSize: 12 }}>
+          Location: {latitude.toFixed(5)}, {longitude.toFixed(5)}
+        </Text>
+      ) : null}
 
       {transcript ? (
         <Text style={styles.transcriptText}>"{transcript}"</Text>
