@@ -1,25 +1,22 @@
-import { StyleSheet, Text, TouchableOpacity, View,ScrollView,Alert, Modal } from 'react-native'
-import React, {useState} from 'react'
+import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Alert, Modal } from 'react-native';
+import React, { useState } from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import SettingsOption from '../../components/SettingsOption';
-import CustomButton from '../../components/CustomButton'
+import CustomButton from '../../components/CustomButton';
 import PrivacyScreen from '../PrivacyScreen';
 import ReportBugScreen from '../ReportBug';
-<<<<<<< HEAD
-import { useAuth } from '../../context/AuthContext';
-import LoginScreen from '../LoginScreen';
-=======
-import LogoutConfirmation from '../../components/LogoutConfirmation'
+import LogoutConfirmation from '../../components/LogoutConfirmation';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import ConfirmDeleteModal from '../../modals/ConfirmDeleteModal';
->>>>>>> origin/main
 
 const SettingsScreen = ({ navigation }) => {
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
- const handleLogoutPress = () => {
-    setLogoutModalVisible(true); 
+  const handleLogoutPress = () => {
+    setLogoutModalVisible(true);
   };
 
   const handleCancelLogout = () => {
@@ -27,17 +24,13 @@ const SettingsScreen = ({ navigation }) => {
   };
 
   const handleConfirmLogout = () => {
-    setLogoutModalVisible(false); 
-    Alert.alert('Logged Out', 'You have been logged out.'); 
+    setLogoutModalVisible(false);
+    Alert.alert('Logged Out', 'You have been logged out.');
     navigation.reset({
       index: 0,
       routes: [{ name: 'LoginScreen' }],
     });
-    };
-
-
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  };
 
   const handleDeletePress = () => {
     Alert.alert(
@@ -56,23 +49,21 @@ const SettingsScreen = ({ navigation }) => {
 
   const handleConfirmDelete = async (password) => {
     setIsDeleting(true);
-    
     try {
       // Replace with your actual API call
       const success = await deleteAccountAPI(password);
-      
       if (success) {
         Alert.alert(
           'Account Deleted',
           'Your account has been permanently removed.',
           [
-            { 
-              text: 'OK', 
+            {
+              text: 'OK',
               onPress: () => navigation.reset({
                 index: 0,
-                routes: [{ name: 'LoginScreen' }]
-              })
-            }
+                routes: [{ name: 'LoginScreen' }],
+              }),
+            },
           ]
         );
       } else {
@@ -88,60 +79,41 @@ const SettingsScreen = ({ navigation }) => {
 
   // Mock API function - replace with real implementation
   const deleteAccountAPI = async (password) => {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       setTimeout(() => {
         resolve(password.length > 5); // Simple mock validation
       }, 1500);
     });
   };
+
   return (
     <View style={styles.mainContainer}>
-     <View intensity={100} tint="light" style={styles.headerContainer}>  
+      <View intensity={100} tint="light" style={styles.headerContainer}>
         <Text style={styles.settingsText}>Settings</Text>
-     </View>
-
-  <ScrollView contentContainerStyle={styles.scrollContent}>
-     <Text style ={styles.sectionName}>GENERAL</Text>
-         <SettingsOption iconName="person-outline" label="Account" onPress={() => navigation.navigate('EditProfileScreen')} />  
-         <SettingsOption iconName="lock-closed-outline" label="Privacy" onPress={() => navigation.navigate('PrivacyScreen')} />
-             <SettingsOption iconName="options-outline" label="Preferences" onPress={() => navigation.navigate('PreferencesScreen')}  />
-         <SettingsOption iconName="information-circle-outline" label="About Us" onPress={() => navigation.navigate('AboutUsScreen')}  />
-         <SettingsOption iconName="trash-outline" label="Delete Account" onPress={handleDeletePress} />
-   
-    <Text style ={styles.sectionName}>FEEDBACK</Text>
+      </View>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.sectionName}>GENERAL</Text>
+        <SettingsOption iconName="person-outline" label="Account" onPress={() => navigation.navigate('EditProfileScreen')} />
+        <SettingsOption iconName="lock-closed-outline" label="Privacy" onPress={() => navigation.navigate('PrivacyScreen')} />
+        <SettingsOption iconName="options-outline" label="Preferences" onPress={() => navigation.navigate('PreferencesScreen')} />
+        <SettingsOption iconName="information-circle-outline" label="About Us" onPress={() => navigation.navigate('AboutUsScreen')} />
+        <SettingsOption iconName="trash-outline" label="Delete Account" onPress={handleDeletePress} />
+        <Text style={styles.sectionName}>FEEDBACK</Text>
         <SettingsOption iconName="warning-outline" label="Report a bug" onPress={() => navigation.navigate('ReportBugScreen')} />
-        <SettingsOption iconName="share-outline" label="Send Feedback" onPress={() => {}}/>
-        
-        
-<<<<<<< HEAD
-        <CustomButton 
-        buttonText="Logout"
-        backgroundColor="transparent" 
-        textColor = 'red'
-        borderWidth={2}
-        borderColor={'red'} 
-        bottom={-50}
-        fontFamily={'Montserrat-Bold'}
-        onPress={handleLogout}
-      />
-=======
-       <TouchableOpacity 
-               style={styles.logoutContainer} 
-               activeOpacity={0.7}
-               onPress={handleLogoutPress} 
-             >
-               <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
->>>>>>> origin/main
-      
+        <SettingsOption iconName="share-outline" label="Send Feedback" onPress={() => {}} />
+        <TouchableOpacity
+          style={styles.logoutContainer}
+          activeOpacity={0.7}
+          onPress={handleLogoutPress}
+        >
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
       </ScrollView>
-
       <LogoutConfirmation
         visible={logoutModalVisible}
-        onCancel={() => setLogoutModalVisible(false)}
-         onConfirm={handleConfirmLogout} 
+        onCancel={handleCancelLogout}
+        onConfirm={handleConfirmLogout}
       />
-
       <ConfirmDeleteModal
         visible={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
@@ -149,8 +121,8 @@ const SettingsScreen = ({ navigation }) => {
         isLoading={isDeleting}
       />
     </View>
-  )
-}
+  );
+};
 
 export default SettingsScreen
 

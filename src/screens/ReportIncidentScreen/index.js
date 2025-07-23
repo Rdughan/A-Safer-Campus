@@ -4,7 +4,7 @@ import {
   StyleSheet, Image, ScrollView, Platform, Animated
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import * as ImagePicker from 'react-native-image-picker';
+// import * as ImagePicker from 'react-native-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -50,16 +50,16 @@ export default function ReportIncidentScreen() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const pickMedia = () => {
-    ImagePicker.launchImageLibrary(
-      { mediaType: 'mixed' },
-      (response) => {
-        if (response.assets && response.assets.length > 0) {
-          setMedia(response.assets[0]);
-        }
-      }
-    );
-  };
+  // const pickMedia = () => {
+  //   ImagePicker.launchImageLibrary(
+  //     { mediaType: 'mixed' },
+  //     (response) => {
+  //       if (response.assets && response.assets.length > 0) {
+  //         setMedia(response.assets[0]);
+  //       }
+  //     }
+  //   );
+  // };
 
   const handleSubmit = () => {
     Animated.sequence([
@@ -105,7 +105,7 @@ export default function ReportIncidentScreen() {
         <Switch value={isAnonymous} onValueChange={setIsAnonymous} />
       </View>
 
-      <TouchableOpacity style={styles.mediaBox} onPress={pickMedia}>
+      <TouchableOpacity style={styles.mediaBox} onPress={() => {}}>
         {media ? (
           <Image source={{ uri: media.uri }} style={styles.mediaPreview} />
         ) : (

@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View, Image, Modal } from 'react-native';
 import React from 'react';
+import { StyleSheet, Text, View, Image, Modal } from 'react-native';
+import PropTypes from 'prop-types';
 
 const SuccessModal = ({ visible, onClose }) => {
   return (
@@ -20,6 +21,11 @@ const SuccessModal = ({ visible, onClose }) => {
       </View>
     </Modal>
   );
+};
+
+SuccessModal.propTypes = {
+  visible: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
 };
 
 const styles = StyleSheet.create({

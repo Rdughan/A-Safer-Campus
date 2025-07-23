@@ -2,22 +2,17 @@ import {
   StyleSheet,
   Text,
   View,
-  TextInput,
   Image,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { ActivityIndicator } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import InputField from "../../components/TextInput";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useState, useEffect } from "react";
 import authService from "../../services/authService";
 import storage from "../../utils/storage";
-import { useAuth } from "../../context/AuthContext";
-import * as Location from "expo-location";
-
-
- import {API_BASE_URL} from '@env';
+import { API_BASE_URL } from '@env';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -69,10 +64,8 @@ const LoginScreen = ({ navigation }) => {
 
       const data = await response.json();
 
-       if (response.ok) {
-        const storageMain = await storage.storeAuthData(data.token, data.user);
-        console.log(storageMain);
-
+      if (response.ok) {
+        await storage.storeAuthData(data.token, data.user);
         Alert.alert("Login Successful", "You have successfully logged in.", [
           { text: "OK", onPress: () => console.log("OK Pressed") },
         ]);
@@ -82,9 +75,8 @@ const LoginScreen = ({ navigation }) => {
       }
 
       return data;
-
     } catch (error) {
-      throw error;
+      setError(error.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -115,7 +107,7 @@ const LoginScreen = ({ navigation }) => {
             iconName="email-outline"
             value={email}
             onChangeText={setEmail}
-            style={styles.inputOverride} // Optional if you want to modify layout
+            style={styles.inputOverride}
           />
 
           <InputField
@@ -124,25 +116,15 @@ const LoginScreen = ({ navigation }) => {
             value={password}
             secureTextEntry={true}
             onChangeText={setPassword}
-            style={styles.inputOverride} // Optional if you want to modify layout
+            style={styles.inputOverride}
           />
         </View>
 
-<<<<<<< HEAD
         {error ? (
           <Text style={{ color: "red", textAlign: "center" }}>{error}</Text>
         ) : null}
 
         <Text style={styles.forgotText}> Forgot password?</Text>
-=======
-              <View style={styles.inputView}>
-                <InputField placeholder="Email" iconName="email-outline" value={email} onChangeText={setEmail} style={styles.inputOverride} 
-                />
-
-                <InputField placeholder="Password" iconName="key-outline" value={password} secureTextEntry={true} onChangeText={setPassword} style={styles.inputOverride}
-                />
-              </View>
->>>>>>> origin/main
 
         <TouchableOpacity
           style={styles.loginContainer}
@@ -169,27 +151,26 @@ const LoginScreen = ({ navigation }) => {
 export default LoginScreen;
 
 const styles = StyleSheet.create({
-<<<<<<< HEAD
   mainContainer: {
     flex: 1,
-    backgroundColor: "#91D8F7",
-    width: "100%",
+    backgroundColor: '#91D8F7',
+    width: '100%',
   },
   textContainer: {
-    flexDirection: "column",
-    gap: "10%",
-    top: "10%",
-    marginLeft: "10%",
-    position: "absolute",
+    flexDirection: 'column',
+    gap: 10,
+    top: '10%',
+    marginLeft: '10%',
+    position: 'absolute',
   },
   helloText: {
-    color: "white",
+    color: 'white',
     fontSize: 40,
-    fontFamily: "Montserrat-Bold",
+    fontFamily: 'Montserrat-Bold',
   },
   welcomeText: {
-    color: "white",
-    fontFamily: "Montserrat-Bold",
+    color: 'white',
+    fontFamily: 'Montserrat-Bold',
     fontSize: 20,
   },
   abstractImage: {
@@ -197,165 +178,76 @@ const styles = StyleSheet.create({
     left: -25,
   },
   drawerContainer: {
-    width: "100%",
-    backgroundColor: "white",
-    position: "absolute",
-    height: "73%",
+    width: '100%',
+    backgroundColor: 'white',
+    position: 'absolute',
+    height: 660,
     bottom: 0,
     borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   illustrationImage: {
     height: 150,
     width: 150,
     right: 10,
-    position: "absolute",
+    position: 'absolute',
     zIndex: 15,
-    top: "20%",
+    top: '20%',
   },
   loginText: {
-    color: "black",
-    fontFamily: "Montserrat-Bold",
+    color: 'black',
+    fontFamily: 'Montserrat-Bold',
     fontSize: 40,
-    padding: "5%",
+    padding: 5,
     left: 10,
     top: 30,
-    position: "absolute",
+    position: 'absolute',
   },
-  inputOverride: {},
+  inputOverride: {
+    height: 55,
+  },
   forgotText: {
-    color: "#239DD6",
-    marginTop: 70,
-    fontFamily: "Montserrat-Bold",
+    color: '#239DD6',
+    marginTop: 130,
+    fontFamily: 'Montserrat-Bold',
     marginBottom: 30,
   },
   inputView: {
-    gap: "25",
-    position: "absolute",
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    top: "20%",
+    gap: 25,
+    position: 'absolute',
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    top: '20%',
   },
   loginContainer: {
-    backgroundColor: "#239DD6",
-    width: "60%",
-    height: "auto",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: '#239DD6',
+    width: '60%',
+    height: '7%',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 12,
-    marginTop: 10,
-    padding: "10",
+    marginTop: 30,
+    padding: 10,
   },
   loginButtonText: {
-    color: "white",
+    color: 'white',
     fontSize: 20,
-    fontFamily: "Montserrat-Regular",
+    fontFamily: 'Montserrat-Regular',
   },
   signUpTextContainer: {
-    flexDirection: "row",
-=======
-    mainContainer:{
-        flex:1,
-        backgroundColor:'#91D8F7',
-        width:'100%',    
-    },
-    textContainer:{
-      flexDirection:'column',
-      gap:'10%',
-      top:'10%',
-      marginLeft:'10%',
-      position:'absolute'
-    },
-    helloText:{
-      color:'white',
-      fontSize:40,
-      fontFamily:'Montserrat-Bold'
-    },
-    welcomeText:{
-      color:'white',
-      fontFamily:'Montserrat-Bold',
-      fontSize:20,
-    },
-    abstractImage:{
-      top:-5,
-      left:-25,  
-    },
-    drawerContainer:{ 
-    width:'100%',
-    backgroundColor:'white',
-    position:'absolute',
-    height:660,
-    bottom:0,
-    borderRadius:20,
-    alignItems:'center',
-    justifyContent:'center',
-    
-    },
-    illustrationImage:{
-      height:150,
-      width:150,
-      right:10,
-     position:'absolute',
-     zIndex:15,
-     top:'20%'
-    },
-    loginText:{
-      color:'black',
-      fontFamily:'Montserrat-Bold',
-      fontSize:40,
-      padding:'5%',
-      left:10,
-      top:30,
-      position:'absolute'
-    },
-    inputOverride:{
-      height:55
-    },
-    forgotText:{
-      color:'#239DD6',
-      marginTop:130,
-      fontFamily:'Montserrat-Bold',
-      marginBottom:30
-    },
-    inputView:{
-      gap:'25',
-      position:'absolute',
-      width:'100%',
-      alignItems:'center',
-      justifyContent:'center',
-      top:'20%', 
-    },
-    loginContainer:{
-      backgroundColor:'#239DD6',
-      width:'60%',
-      height:'7%',
-      alignItems:'center',
-      justifyContent:'center',
-      borderRadius:12,
-      marginTop:30,
-      padding:'10',
-           
-    },
-    loginButtonText:{
-      color:'white',
-      fontSize:20,
-      fontFamily:'Montserrat-Regular'
-    },
-     signUpTextContainer: {
     flexDirection: 'row',
->>>>>>> origin/main
     marginTop: 20,
   },
   plainText: {
     fontSize: 16,
-    color: "#333",
-    fontFamily: "Montserrat-Regular",
+    color: '#333',
+    fontFamily: 'Montserrat-Regular',
   },
-  linkText: {
+  linkText:  {
     fontSize: 16,
-    color: "#239DD6",
-    fontFamily: "Montserrat-Regular",
+    color: '#239DD6',
+    fontFamily: 'Montserrat-Regular',
   },
 });

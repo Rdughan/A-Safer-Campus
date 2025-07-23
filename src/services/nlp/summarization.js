@@ -1,5 +1,5 @@
-import * as tf from '@tensorflow/tfjs';
-import * as use from '@tensorflow-models/universal-sentence-encoder';
+// import * as tf from '@tensorflow/tfjs';
+// import * as use from '@tensorflow-models/universal-sentence-encoder';
 
 export const summarizeText = async (text) => {
   if (!text || text.trim().length === 0) {
@@ -8,21 +8,21 @@ export const summarizeText = async (text) => {
 
   try {
     // Load the Universal Sentence Encoder model
-    const model = await use.load();
+    // const model = await use.load();
     
     // Split text into sentences
     const sentences = text.split(/[.!?]+/).filter(s => s.trim());
     
     // Encode sentences
-    const embeddings = await model.embed(sentences);
+    // const embeddings = await model.embed(sentences);
     
     // Get importance scores for each sentence
-    const scores = await calculateSentenceScores(embeddings);
+    // const scores = await calculateSentenceScores(embeddings);
     
     // Select top sentences for summary (30% of original or minimum 2 sentences)
     const summaryLength = Math.max(2, Math.ceil(sentences.length * 0.3));
     const topSentences = sentences
-      .map((sentence, index) => ({ sentence, score: scores[index] }))
+      .map((sentence, index) => ({ sentence, score: 0 })) // Placeholder for scores
       .sort((a, b) => b.score - a.score)
       .slice(0, summaryLength)
       .map(item => item.sentence);
@@ -45,15 +45,16 @@ export const summarizeText = async (text) => {
 
 const calculateSentenceScores = async (embeddings) => {
   // Calculate cosine similarity between sentences
-  const scores = await tf.tidy(() => {
-    const normalized = tf.div(
-      embeddings,
-      tf.norm(embeddings, 2, 1, true)
-    );
-    return normalized.matMul(normalized.transpose());
-  });
+  // const scores = await tf.tidy(() => {
+  //   const normalized = tf.div(
+  //     embeddings,
+  //     tf.norm(embeddings, 2, 1, true)
+  //   );
+  //   return normalized.matMul(normalized.transpose());
+  // });
   
-  return Array.from(await scores.data());
+  // return Array.from(await scores.data());
+  return Array(embeddings.length).fill(0); // Placeholder for scores
 };
 
 const detectIncidentType = (text) => {

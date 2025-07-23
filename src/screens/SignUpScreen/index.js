@@ -1,30 +1,14 @@
-<<<<<<< HEAD
-import {
-  StyleSheet,
-  Text,
-  View,
-  Image,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  ScrollView,
-  Platform,
-  Alert,
-} from "react-native";
-import React, { useState } from "react";
-import InputField from "../../components/TextInput";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import { useAuth } from '../../context/AuthContext';
-
-=======
-import { StyleSheet, Text, View, Image, TouchableOpacity,Modal } from 'react-native'
-import React, { useState } from 'react'
+import { StyleSheet, Text, View, Image, TouchableOpacity, Modal, Alert, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
+import React, { useState } from 'react';
 import InputField from '../../components/TextInput';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import SuccessModal from '../SuccessScreen';
->>>>>>> origin/main
+
+const API_BASE_URL = process.env.IP_ADDRESS || 'http://192.168.118.95:5000';
+const API_TIMEOUT = 30000; // 30 seconds
 
 const SignUpScreen = ({ navigation }) => {
-    const [username, setUsername] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [studentID, setStudentID] = useState("");
   const [password, setPassword] = useState("");
@@ -33,108 +17,65 @@ const SignUpScreen = ({ navigation }) => {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-<<<<<<< HEAD
-  // API Configuration - Make sure this matches your server
-  const API_BASE_URL = process.env.IP_ADDRESS || "http://192.168.118.95:5000";
-  const API_TIMEOUT = 30000; // 30 seconds
-
   // Enhanced validation function
   const validateInput = () => {
-    console.log("=== VALIDATING INPUT ===");
     setMessage("");
-
     if (!username || !email || !password || !Confirmpassword) {
-      console.log("Validation failed: All fields are required");
       setMessage("All fields are required");
       return false;
     }
-
-    // Username validation
     if (!username.trim()) {
-      console.log("Validation failed: Username is required");
       setMessage("Username is required");
       return false;
     }
-
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email.trim()) {
-      console.log("Validation failed: Email is required");
       setMessage("Email is required");
       return false;
     }
     if (!emailRegex.test(email)) {
-      console.log("Validation failed: Invalid email format");
       setMessage("Please enter a valid email address");
       return false;
     }
-
-    // Password strength validation
     if (!password) {
-      console.log("Validation failed: Password is required");
       setMessage("Password is required");
       return false;
     }
     if (password.length < 8) {
-      console.log("Validation failed: Password too short");
       setMessage("Password must be at least 8 characters long");
       return false;
     }
-
-    // Password confirmation
     if (!Confirmpassword) {
-      console.log("Validation failed: Confirm password is required");
       setMessage("Please confirm your password");
       return false;
     }
     if (password !== Confirmpassword) {
-      console.log("Validation failed: Passwords do not match");
       setMessage("Passwords do not match");
       return false;
     }
-
-    // Phone validation (optional but if provided, must be valid)
     if (Phone && Phone.trim()) {
       const phoneRegex = /^\+?[\d\s\-\(\)]{10,}$/;
       if (!phoneRegex.test(Phone)) {
-        console.log("Validation failed: Invalid phone format");
         setMessage("Please enter a valid phone number");
         return false;
       }
     }
-
-    console.log("✅ Validation passed");
     return true;
   };
 
   // Enhanced fetch with timeout
   const fetchWithTimeout = async (url, options, timeout = API_TIMEOUT) => {
-    console.log(`Making request to: ${url}`);
-    console.log(`Request options:`, {
-      ...options,
-      body: options.body ? "[REQUEST BODY]" : undefined,
-    });
-
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      console.log("Request timeout reached");
-      controller.abort();
-    }, timeout);
-
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
     try {
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
-
-      console.log(`Response status: ${response.status}`);
-      console.log(`Response headers:`, response.headers);
-
       return response;
     } catch (error) {
       clearTimeout(timeoutId);
-      console.error("Fetch error:", error);
       if (error.name === "AbortError") {
         throw new Error("Request timeout");
       }
@@ -146,19 +87,9 @@ const SignUpScreen = ({ navigation }) => {
   const fetchWithRetry = async (url, options, maxRetries = 3) => {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`=== ATTEMPT ${attempt}/${maxRetries} ===`);
         return await fetchWithTimeout(url, options);
       } catch (error) {
-        console.log(`Attempt ${attempt} failed:`, error.message);
-
-        if (attempt === maxRetries) {
-          throw error;
-        }
-
-        // Wait before retrying (exponential backoff)
-        const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
-        console.log(`Waiting ${delay}ms before retry...`);
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        if (attempt === maxRetries) throw error;
       }
     }
   };
@@ -335,16 +266,8 @@ const SignUpScreen = ({ navigation }) => {
       ]);
     }
   };
-=======
-const SignUpScreen = ({navigation}) => {
-  const [email, setEmail] = useState('');
-  const [studentID, setStudentID] = useState('');
-  const [password, setPassword] = useState('');
-  const [Confirmpassword, setConfirmPassword] = useState('');
-  const [Phone, setPhone] = useState('');
-  const [username, setUsername] = useState('Henry');
 
-    const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const handleSignUpPress = () => {
     // Your signup validation logic
@@ -359,9 +282,6 @@ const SignUpScreen = ({navigation}) => {
     }, 1000);
   };
 
-  
-  
->>>>>>> origin/main
   return (
     <KeyboardAvoidingView
       style={styles.mainContainer}
@@ -385,25 +305,7 @@ const SignUpScreen = ({navigation}) => {
             <Text style={styles.backText}>Back to login</Text>
           </TouchableOpacity>
 
-<<<<<<< HEAD
           <Text style={styles.signUpText}>Sign Up</Text>
-=======
-              <TouchableOpacity 
-                style={styles.loginContainer} 
-                activeOpacity={0.7}
-                onPress={handleSignUpPress} 
-              >
-                <Text style={styles.loginButtonText}>Sign Up</Text>
-              </TouchableOpacity>   
-        </View>   
-            <SuccessModal 
-        visible={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
-      />
-     </View>
-  )
-}
->>>>>>> origin/main
 
           {message ? (
             <Text
@@ -506,6 +408,10 @@ const SignUpScreen = ({navigation}) => {
           {/* Debug info */}
         </ScrollView>
       </ScrollView>
+      <SuccessModal 
+        visible={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+      />
     </KeyboardAvoidingView>
   );
 };
@@ -527,7 +433,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingBottom: 40,
   },
-<<<<<<< HEAD
   backText: {
     fontFamily: "Montserrat-Regular",
   },
@@ -595,62 +500,3 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
 });
-=======
-  signUpText:{
-      color:'black',
-      fontFamily:'Montserrat-Bold',
-      fontSize:40,
-      padding:'5%',
-      left:10,
-      top:50,
-      position:'absolute'
-    },
-    inputOverride:{
-      marginHorizontal:20,
-      marginTop:25,
-      top:100,   
-    },
-     loginContainer:{
-      backgroundColor:'#239DD6',
-      marginHorizontal:40,
-      height:'auto',
-      alignItems:'center',
-      justifyContent:'center',
-      borderRadius:12,
-      bottom:-170,
-      padding:'10',
-           
-    },
-    loginButtonText:{
-      color:'white',
-      fontSize:20,
-      fontFamily:'Montserrat-Regular'
-    },
-    backToLoginView:{
-      flexDirection:'row',
-      alignItems:'center',
-      left:20,
-      top:20,
-      gap:10
-      
-    },
-     modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContainer: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-    width: '80%',
-    alignItems: 'center',
-  },
-  welcomeText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#239DD6',
-  },
-})
->>>>>>> origin/main
