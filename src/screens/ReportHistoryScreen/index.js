@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, ActivityIndicator, StyleSheet, TouchableOpacity } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = process.env.IP_ADDRESS || "http://192.168.118.95:5000";
+const API_BASE_URL = process.env.IP_ADDRESS || "http://192.168.219.95:5000";
 
 const ReportHistoryScreen = ({ navigation }) => {
   const [reports, setReports] = useState([]);

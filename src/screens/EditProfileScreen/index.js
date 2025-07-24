@@ -14,7 +14,7 @@ const EditProfileScreen = ({ navigation }) => {
 
   const handleSave = async () => {
     try {
-      const response = await fetch('http://192.168.53.95:5000/api/user/update', {
+      const response = await fetch('http://192.168.219.95:5000/api/user/update', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

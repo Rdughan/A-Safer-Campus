@@ -16,7 +16,7 @@ import * as Location from "expo-location";
 // import * as Notifications from "expo-notifications";
 // import Constants from "expo-constants";
 
-const API_BASE_URL = process.env.IP_ADDRESS || "http://192.168.118.95:5000";
+const API_BASE_URL = process.env.IP_ADDRESS || "http://192.168.219.95:5000";
 
 const HEATMAP_GRADIENT = {
   colors: [

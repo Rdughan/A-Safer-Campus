@@ -7,23 +7,31 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import Voice from "@react-native-voice/voice";
-import * as Speech from "expo-speech";
+// import Voice from "@react-native-voice/voice";
+// import * as Speech from "expo-speech";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useAuth } from "../../context/AuthContext";
 import { storage } from "../../utils/storage";
 import * as Location from "expo-location";
 import { Switch } from "react-native";
+import { Audio } from 'expo-av';
 
 const VoiceReport = ({ onReportGenerated, navigation }) => {
-  const [isRecording, setIsRecording] = useState(false);
-  const [transcript, setTranscript] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [anonymous, setAnonymous] = useState(false);
+  // Commented out voice-to-text state
+  // const [isRecording, setIsRecording] = useState(false);
+  // const [transcript, setTranscript] = useState("");
+  // const [isProcessing, setIsProcessing] = useState(false);
+  // const [anonymous, setAnonymous] = useState(false);
 
   //Add State for location
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
+
+  // Audio recording state
+  const [recording, setRecording] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioUri, setAudioUri] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const { logout } = useAuth();
 
@@ -38,123 +46,43 @@ const VoiceReport = ({ onReportGenerated, navigation }) => {
       setLatitude(location.coords.latitude);
       setLongitude(location.coords.longitude);
     })();
-    Voice.onSpeechResults = onSpeechResults;
-    return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
-    };
   }, []);
 
-  const onSpeechResults = (e) => {
-    setTranscript(e.value[0]);
-  };
-
+  // Audio recording handlers
   const startRecording = async () => {
     try {
-      await Voice.start("en-US");
+      setIsProcessing(true);
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission denied', 'Audio recording permission is required');
+        setIsProcessing(false);
+        return;
+      }
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
+      );
+      setRecording(recording);
       setIsRecording(true);
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error('Failed to start recording', err);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const stopRecording = async () => {
-    try {
-      await Voice.stop();
-      setIsRecording(false);
-      processReport();
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const processReport = async () => {
     setIsProcessing(true);
-
     try {
-      const token = await storage.getToken();
-
-      // 1. Send transcript to backend for summarization
-      const summaryResponse = await fetch(
-        "http://192.168.53.95:5000/api/nlp/summarize",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            transcript,
-            type, // Make sure these are defined in your component!
-            location,
-            severity,
-            timestamp: new Date().toISOString(),
-          }),
-        }
-      );
-
-      if (summaryResponse.status === 401) {
-        logout();
-        if (navigation) navigation.replace("Login");
-        else Alert.alert("Session expired", "Please log in again.");
-        setIsProcessing(false);
-        return;
-      }
-
-      if (!summaryResponse.ok) {
-        const errorData = await summaryResponse.json();
-        Alert.alert("Error", errorData.message || "Failed to summarize report");
-        setIsProcessing(false);
-        return;
-      }
-
-      // Parse the summarization response ONCE
-      /*const reportPayload = await summaryResponse.json();*/
-
-      const reportPayload = {
-        summary,
-        type, // Make sure these are defined in your component!
-        location,
-        severity,
-        original: transcript,
-        timestamp: new Date().toISOString(),
-        coords: { lat: latitude, lng: longitude }, // Get these from device/location picker
-      };
-
-      // 2. Submit the summarized report to backend
-      const reportResponse = await fetch(
-        "http://192.168.53.95:5000/api/reports",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(reportPayload),
-        }
-      );
-
-      if (reportResponse.status === 401) {
-        logout();
-        if (navigation) navigation.replace("Login");
-        else Alert.alert("Session expired", "Please log in again.");
-        setIsProcessing(false);
-        return;
-      }
-
-      if (reportResponse.ok) {
-        Alert.alert("Success", "Report submitted successfully");
-        setTranscript("");
-        if (onReportGenerated) onReportGenerated(reportPayload);
-      } else {
-        const errorData = await reportResponse.json();
-        Alert.alert("Error", errorData.message || "Failed to submit report");
-      }
-    } catch (error) {
-      console.error("Processing error:", error);
-      Alert.alert(
-        "Processing Error",
-        "Failed to process or submit your report. Please try again."
-      );
+      if (!recording) return;
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      setAudioUri(uri);
+      setRecording(null);
+      setIsRecording(false);
+      Alert.alert('Recording saved', 'Your audio report has been saved locally.');
+    } catch (err) {
+      console.error('Failed to stop recording', err);
     } finally {
       setIsProcessing(false);
     }
@@ -165,6 +93,7 @@ const VoiceReport = ({ onReportGenerated, navigation }) => {
       <TouchableOpacity
         style={[styles.recordButton, isRecording && styles.recording]}
         onPress={isRecording ? stopRecording : startRecording}
+        disabled={isProcessing}
       >
         <Ionicons
           name={isRecording ? "stop-circle" : "mic"}
@@ -176,7 +105,7 @@ const VoiceReport = ({ onReportGenerated, navigation }) => {
       {isProcessing && (
         <View style={styles.processingContainer}>
           <ActivityIndicator color="#239DD6" />
-          <Text style={styles.processingText}>Processing your report...</Text>
+          <Text style={styles.processingText}>Processing...</Text>
         </View>
       )}
 
@@ -186,8 +115,8 @@ const VoiceReport = ({ onReportGenerated, navigation }) => {
         </Text>
       ) : null}
 
-      {transcript ? (
-        <Text style={styles.transcriptText}>"{transcript}"</Text>
+      {audioUri ? (
+        <Text style={styles.transcriptText}>Audio saved: {audioUri.split('/').pop()}</Text>
       ) : null}
     </View>
   );

@@ -4,7 +4,7 @@ import InputField from '../../components/TextInput';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import SuccessModal from '../SuccessScreen';
 
-const API_BASE_URL = process.env.IP_ADDRESS || 'http://192.168.118.95:5000';
+const API_BASE_URL = process.env.IP_ADDRESS || 'http://192.168.219.95:5000';
 const API_TIMEOUT = 30000; // 30 seconds
 
 const SignUpScreen = ({ navigation }) => {
