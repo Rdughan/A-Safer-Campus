@@ -1,8 +1,9 @@
-import { StyleSheet, Text, View, Image, TouchableOpacity,Modal } from 'react-native'
+import { StyleSheet, Text, View, Image, TouchableOpacity,Modal, Alert } from 'react-native'
 import React, { useState } from 'react'
 import InputField from '../../components/TextInput';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import SuccessModal from '../SuccessScreen';
+import { useAuth } from '../../context/AuthContext';
 
 
 const SignUpScreen = ({navigation}) => {
@@ -12,20 +13,59 @@ const SignUpScreen = ({navigation}) => {
   const [Confirmpassword, setConfirmPassword] = useState('');
   const [Phone, setPhone] = useState('');
   const [username, setUsername] = useState('Henry');
+  const [loading, setLoading] = useState(false);
 
-    const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const { signUp } = useAuth();
 
-  const handleSignUpPress = () => {
-    // Your signup validation logic
-    
-    // Show the success modal
-    setShowSuccessModal(true);
-    
-    // After 1.5 seconds, hide modal and navigate
-    setTimeout(() => {
-      setShowSuccessModal(false);
-      navigation.navigate('Main');
-    }, 1000);
+  const handleSignUpPress = async () => {
+    // Validation
+    if (!email || !studentID || !password || !Confirmpassword || !Phone) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (password !== Confirmpassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters long');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const userData = {
+        student_id: studentID,
+        phone: Phone,
+        username: username
+      };
+
+      // Define redirect URL for email confirmation
+      // Use the same URL you set in Supabase Authentication Settings
+      const redirectTo = 'exp://localhost:8081'; // Development URL
+      // For production, use: 'safecampus://'
+      
+      const { data, error } = await signUp(email, password, userData, redirectTo);
+      if (error) {
+        Alert.alert('Sign Up Failed', error.message);
+      } else {
+        // Show the success modal
+        setShowSuccessModal(true);
+        
+        // After 1.5 seconds, hide modal and navigate
+        setTimeout(() => {
+          setShowSuccessModal(false);
+          navigation.navigate('Main');
+        }, 1000);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
   
@@ -56,11 +96,14 @@ const SignUpScreen = ({navigation}) => {
               </View>  
 
               <TouchableOpacity 
-                style={styles.loginContainer} 
+                style={[styles.loginContainer, loading && styles.loginContainerDisabled]} 
                 activeOpacity={0.7}
-                onPress={handleSignUpPress} 
+                onPress={handleSignUpPress}
+                disabled={loading}
               >
-                <Text style={styles.loginButtonText}>Sign Up</Text>
+                <Text style={styles.loginButtonText}>
+                  {loading ? 'Creating Account...' : 'Sign Up'}
+                </Text>
               </TouchableOpacity>   
         </View>   
             <SuccessModal 

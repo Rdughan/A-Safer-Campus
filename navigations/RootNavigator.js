@@ -5,13 +5,15 @@ import OnboardingScreen1 from '../src/screens/OnboardingScreen1';
 import OnboardingScreen2 from '../src/screens/OnboardingScreen2';
 import LoginScreen from '../src/screens/LoginScreen';
 import TabNavigator from './TabNavigator';
-import HomeScreen from '../src/screens/HomeScreen';
 import SignUpScreen from '../src/screens/SignUpScreen';
 import EditProfileScreen from '../src/screens/EditProfileScreen';
 import PreferencesScreen from '../src/screens/PreferencesScreen'
 import PrivacyScreen from '../src/screens/PrivacyScreen';
 import AboutUsScreen from '../src/screens/AboutUsScreen';
 import ReportBugScreen from '../src/screens/ReportBug';
+import SafetyMapScreen from '../src/screens/SafetyMapScreen';
+
+
 
 const Stack = createNativeStackNavigator();
 
@@ -34,7 +36,6 @@ export default function RootNavigator() {
           <Stack.Screen name="OnboardingScreen1" component={OnboardingScreen1} />
           <Stack.Screen name="OnboardingScreen2" component={OnboardingScreen2} />
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
-          <Stack.Screen name="HomeScreen" component={HomeScreen} />
           <Stack.Screen name="SignUpScreen" component={SignUpScreen} />
           <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
           <Stack.Screen name="PreferencesScreen" component={PreferencesScreen} />
@@ -42,6 +43,7 @@ export default function RootNavigator() {
           <Stack.Screen name="AboutUsScreen" component={AboutUsScreen} />
           <Stack.Screen name="ReportBugScreen" component={ReportBugScreen} />
           <Stack.Screen name="Main" component={TabNavigator} />
+          <Stack.Screen name="SafetyMap" component={SafetyMapScreen} />
         </>
       )}
       

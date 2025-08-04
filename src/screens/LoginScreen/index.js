@@ -1,12 +1,36 @@
-import { StyleSheet, Text, View,TextInput,Image,TouchableOpacity } from 'react-native'
+import { StyleSheet, Text, View,TextInput,Image,TouchableOpacity, Alert } from 'react-native'
 import React, {useState} from 'react'
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import InputField from '../../components/TextInput'; 
+import InputField from '../../components/TextInput';
+import { useAuth } from '../../context/AuthContext'; 
 
 
 const LoginScreen = ({navigation}) => {
   const [email, setEmail] = useState('');
-   const [password, setPassword] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { signIn } = useAuth();
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await signIn(email, password);
+      if (error) {
+        Alert.alert('Login Failed', error.message);
+      } else {
+        navigation.replace('Main');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style ={styles.mainContainer}>
@@ -37,12 +61,14 @@ const LoginScreen = ({navigation}) => {
 
               <Text style ={styles.forgotText}> Forgot password?</Text>
               <TouchableOpacity 
-                      style={styles.loginContainer} 
+                      style={[styles.loginContainer, loading && styles.loginContainerDisabled]} 
                       activeOpacity={0.7}
-                      onPress={() => navigation.replace('Main')}
-
+                      onPress={handleLogin}
+                      disabled={loading}
                     >
-                      <Text style={styles.loginButtonText}>Login</Text>
+                      <Text style={styles.loginButtonText}>
+                        {loading ? 'Logging in...' : 'Login'}
+                      </Text>
                     </TouchableOpacity>
 
               <View style={styles.signUpTextContainer}>
@@ -159,6 +185,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#239DD6',
     fontFamily:'Montserrat-Regular'
+  },
+  loginContainerDisabled: {
+    backgroundColor: '#ccc',
   },
     
 })

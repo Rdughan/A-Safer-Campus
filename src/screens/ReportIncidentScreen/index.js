@@ -1,21 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Switch,TouchableWithoutFeedback,
-  StyleSheet, Image, ScrollView, Platform, Animated
+  StyleSheet, Image, ScrollView, Platform, Animated, Alert
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as ImagePicker from 'react-native-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as Location from 'expo-location';
+import { incidentService } from '../../services/incidentService';
+import { INCIDENT_TYPES } from '../../config/supabase';
+import { AuthContext } from '../../context/AuthContext';
 
-
-const INCIDENT_TYPES = [
-  'Snake Bite', 'Armed Robbery', 'Fire Attack',
-  'Pickpocketing', 'Other'
+const INCIDENT_TYPE_OPTIONS = [
+  { label: 'Snake Bite', value: INCIDENT_TYPES.SNAKE_BITE },
+  { label: 'Fire Attack', value: INCIDENT_TYPES.FIRE_ATTACK },
+  { label: 'Pickpocketing', value: INCIDENT_TYPES.PICKPOCKETING },
+  { label: 'Theft', value: INCIDENT_TYPES.THEFT },
+  { label: 'Assault', value: INCIDENT_TYPES.ASSAULT },
+  { label: 'Harassment', value: INCIDENT_TYPES.HARASSMENT },
+  { label: 'Vandalism', value: INCIDENT_TYPES.VANDALISM },
+  { label: 'Medical Emergency', value: INCIDENT_TYPES.MEDICAL },
+  { label: 'Other', value: INCIDENT_TYPES.OTHER }
 ];
 
-export default function ReportIncidentScreen() {
+export default function ReportIncidentScreen({ navigation }) {
+  const { user } = useContext(AuthContext);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [sendToAuthorities, setSendToAuthorities] = useState(true);
   const [incidentType, setIncidentType] = useState('');
@@ -25,6 +36,77 @@ export default function ReportIncidentScreen() {
   const [media, setMedia] = useState(null);
   const [showSubmitAnimation] = useState(new Animated.Value(1));
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+
+  // Get current location when component mounts
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
+
+  const getCurrentLocation = async () => {
+    try {
+      setLocationLoading(true);
+      
+      // Request location permissions
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Location Permission Required',
+          'Please enable location access to automatically capture incident location.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      // Get current position
+      let location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+        maximumAge: 10000, // 10 seconds
+        timeout: 15000, // 15 seconds
+      });
+
+      setCurrentLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+
+      // Optionally get address from coordinates
+      try {
+        const addressResponse = await Location.reverseGeocodeAsync({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+        
+        if (addressResponse.length > 0) {
+          const address = addressResponse[0];
+          const addressString = [
+            address.street,
+            address.district,
+            address.city,
+            address.region
+          ].filter(Boolean).join(', ');
+          
+          if (addressString && !location) {
+            setLocation(addressString);
+          }
+        }
+      } catch (addressError) {
+        console.log('Could not get address:', addressError);
+      }
+
+    } catch (error) {
+      console.error('Error getting location:', error);
+      Alert.alert(
+        'Location Error',
+        'Could not get your current location. Please enter the location manually.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setLocationLoading(false);
+    }
+  };
 
  const handleTimeChange = (event, selectedTime) => {
     
@@ -61,34 +143,83 @@ export default function ReportIncidentScreen() {
     );
   };
 
-  const handleSubmit = () => {
-    Animated.sequence([
-      Animated.timing(showSubmitAnimation, {
-        toValue: 0.8,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(showSubmitAnimation, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  const handleSubmit = async () => {
+    if (!incidentType) {
+      Alert.alert('Error', 'Please select an incident type');
+      return;
+    }
 
-          const timeString = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (!description && incidentType !== INCIDENT_TYPES.OTHER) {
+      Alert.alert('Error', 'Please provide a description of the incident');
+      return;
+    }
 
-    const data = {
-      isAnonymous,
-      sendToAuthorities,
-      incidentType,
-      description,
-      time: timeString,
-      location,
-      media
-    };
+    if (!location) {
+      Alert.alert('Error', 'Please provide the location of the incident');
+      return;
+    }
 
-    console.log("Submitted data: ", data);
-    alert('Incident Report Submitted!');
+    setSubmitting(true);
+
+    try {
+      Animated.sequence([
+        Animated.timing(showSubmitAnimation, {
+          toValue: 0.8,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(showSubmitAnimation, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      const incidentData = {
+        user_id: user?.id,
+        title: `${incidentType.replace('_', ' ').toUpperCase()} - ${location}`,
+        description: description || `Incident reported at ${location}`,
+        incident_type: incidentType,
+        location_description: location,
+        latitude: currentLocation?.latitude || 5.6064, // Fallback to campus coordinates
+        longitude: currentLocation?.longitude || -0.2000, // Fallback to campus coordinates
+        reported_at: time.toISOString(),
+        evidence_files: media ? [media.uri] : [],
+        witnesses: [],
+        status: 'reported'
+      };
+
+      console.log('Submitting incident data:', incidentData);
+
+      const result = await incidentService.createIncident(incidentData);
+
+      console.log('Incident creation result:', result);
+
+      if (result.error) {
+        console.error('Incident creation error:', result.error);
+        Alert.alert('Error', 'Failed to submit incident report. Please try again.');
+        return;
+      }
+
+      console.log('Incident created successfully:', result.data);
+
+      Alert.alert(
+        'Success', 
+        'Incident report submitted successfully! The appropriate authorities have been notified.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('Home')
+          }
+        ]
+      );
+
+    } catch (error) {
+      console.error('Error submitting incident:', error);
+      Alert.alert('Error', 'Failed to submit incident report. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -153,39 +284,61 @@ export default function ReportIncidentScreen() {
         onChangeText={setLocation}
       />
 
+      {/* Location Status */}
+      <View style={styles.locationStatus}>
+        {locationLoading ? (
+          <Text style={styles.locationStatusText}>
+            <Ionicons name="location-outline" size={16} color="#666" /> Getting your location...
+          </Text>
+        ) : currentLocation ? (
+          <Text style={styles.locationStatusText}>
+            <Ionicons name="checkmark-circle" size={16} color="#4CAF50" /> Location captured
+          </Text>
+        ) : (
+          <View>
+            <Text style={styles.locationStatusText}>
+              <Ionicons name="warning" size={16} color="#FF9800" /> Using campus coordinates
+            </Text>
+            <TouchableOpacity onPress={getCurrentLocation} style={styles.locationButton}>
+              <Text style={styles.locationButtonText}>
+                <Ionicons name="location-outline" size={16} /> Get Current Location
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
       <Text style={styles.label}>Select Incident Type</Text>
       <View style={styles.typesContainer}>
-        {INCIDENT_TYPES.map((type) => (
+        {INCIDENT_TYPE_OPTIONS.map((type) => (
           <TouchableOpacity
-            key={type}
+            key={type.value}
             style={[
               styles.typeButton,
-              incidentType === type && styles.typeButtonSelected
+              incidentType === type.value && styles.typeButtonSelected
             ]}
-            onPress={() => setIncidentType(type)}
+            onPress={() => setIncidentType(type.value)}
           >
             <Text
               style={[
                 styles.typeText,
-                incidentType === type && styles.typeTextSelected
+                incidentType === type.value && styles.typeTextSelected
               ]}
             >
-              {type}
+              {type.label}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {incidentType === 'Other' && (
-        <TextInput
-          style={styles.input}
-          placeholder="Describe the incident"
-          multiline
-          numberOfLines={4}
-          value={description}
-          onChangeText={setDescription}
-        />
-      )}
+      <TextInput
+        style={styles.input}
+        placeholder="Describe the incident in detail"
+        multiline
+        numberOfLines={4}
+        value={description}
+        onChangeText={setDescription}
+      />
 
       <View style={styles.toggleRow}>
         <Text style={styles.label}>Send to Authorities</Text>
@@ -193,8 +346,15 @@ export default function ReportIncidentScreen() {
       </View>
 
       <Animated.View style={{ transform: [{ scale: showSubmitAnimation }] }}>
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitText}><Ionicons name="send-outline" size={18} /> Submit Report</Text>
+        <TouchableOpacity 
+          style={[styles.submitButton, submitting && styles.submitButtonDisabled]} 
+          onPress={handleSubmit}
+          disabled={submitting}
+        >
+          <Text style={styles.submitText}>
+            <Ionicons name="send-outline" size={18} /> 
+            {submitting ? ' Submitting...' : ' Submit Report'}
+          </Text>
         </TouchableOpacity>
       </Animated.View>
     </ScrollView>
@@ -318,6 +478,9 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignItems: 'center',
   },
+  submitButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
   submitText: {
     color: '#fff',
     fontSize: 16,
@@ -360,5 +523,32 @@ doneButtonText: {
   fontFamily: 'Montserrat-Bold',
 },
    
+  locationStatus: {
+    backgroundColor: '#E0F2FE',
+    borderRadius: 12,
+    padding: 15,
+    marginVertical: 10,
+    alignItems: 'center',
+  },
+  locationStatusText: {
+    fontSize: 14,
+    color: '#333',
+    fontFamily:'Montserrat-Regular',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  locationButton: {
+    backgroundColor: '#239DD6',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  locationButtonText: {
+    color: 'white',
+    fontSize: 15,
+    fontFamily: 'Montserrat-Bold',
+  },
 });
 

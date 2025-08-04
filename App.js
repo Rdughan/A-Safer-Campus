@@ -18,19 +18,22 @@ import SuccessScreen from './src/screens/SuccessScreen';
 import FailedScreen from './src/screens/FailedScreen';
 import ReportIncidentScreen from './src/screens/ReportIncidentScreen';
 import { ThemeProvider } from './src/context/ThemeContext';
+import { AuthProvider } from './src/context/AuthContext';
+
 export default function App() {
   const fontsLoaded = useLoadFonts();
   if (!fontsLoaded) {
     return null; // Prevents rendering until fonts load
   }
   return (
-
-    <ThemeProvider> 
-      <NavigationContainer>
-        <RootNavigator />
-        <StatusBar style="auto" />
-       </NavigationContainer>
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider> 
+        <NavigationContainer>
+          <RootNavigator />
+          <StatusBar style="auto" />
+         </NavigationContainer>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 
