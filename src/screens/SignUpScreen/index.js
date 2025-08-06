@@ -24,7 +24,7 @@ const SignUpScreen = ({navigation}) => {
     // After 1.5 seconds, hide modal and navigate
     setTimeout(() => {
       setShowSuccessModal(false);
-      navigation.navigate('Main');
+      navigation.replace('Main');
     }, 1000);
   };
 

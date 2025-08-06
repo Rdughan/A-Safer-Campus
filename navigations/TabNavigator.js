@@ -1,13 +1,16 @@
-import React, {useState} from 'react';
+import React, { useContext } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../src/screens/HomeScreen'
 import SettingsScreen from '../src/screens/SettingsScreen';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import NotificationsScreen from '../src/screens/NotificationsScreen';
 import ReportIncidentScreen from '../src/screens/ReportIncidentScreen';
+import { ThemeContext } from '../src/context/ThemeContext'
+
 const Tab = createBottomTabNavigator();
 
 export default function TabNavigator() {
+  const { isDarkMode } = useContext(ThemeContext);
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -27,6 +30,11 @@ export default function TabNavigator() {
         fontFamily: 'Montserrat-Regular', 
         fontSize: 11,
       },
+      tabBarStyle: {
+        backgroundColor: isDarkMode ? '#1a1a1a' : 'white',
+        borderTopColor: isDarkMode ? '#333' : '#f0f0f0',
+      },
+
 
       })}
     >

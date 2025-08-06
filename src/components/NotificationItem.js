@@ -2,30 +2,46 @@ import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-const NotificationItem = ({ item }) => {
+const NotificationItem = ({ item, backgroundColor, borderColor, textColor, timeColor }) => {  // <-- Added closing '}) => {'
+
   return (
     <TouchableOpacity>
-    <View style={styles.notifContainer}>
-      <Image 
-        source={item.image} 
-        style={styles.fireIcon}
-      />
-      <View style={styles.details}>
-        <Text style={styles.heading}>{item.title}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -5 }}>
-          <Ionicons name="location-outline" size={17} color="black" />
-          <Text style={styles.location}>{item.location}</Text>
+      <View style={[
+        styles.notifContainer, 
+        { 
+          backgroundColor,
+          borderBottomColor: borderColor || 'transparent'
+        }
+      ]}>
+        <Image 
+          source={item.image} 
+          style={styles.fireIcon}
+        />
+        <View style={styles.details}>
+          <Text style={[styles.heading, { color: textColor }]}>{item.title}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -5 }}>
+            <Ionicons 
+              name="location-outline" 
+              size={17} 
+              color={textColor} 
+            />
+            <Text style={[styles.location, { color: textColor }]}>
+              {item.location}
+            </Text>
+          </View>
+          <Text style={[styles.status, { color: textColor }]}>
+            {item.status}
+          </Text>
         </View>
-        <Text style={styles.status}>{item.status}</Text>
+        <Text style={[styles.time, { color: timeColor }]}>
+          {item.time}
+        </Text>
       </View>
-      <Text style={styles.time}>{item.time}</Text>
-    </View>
     </TouchableOpacity>
   );
 };
 
 export default NotificationItem;
-
 const styles = StyleSheet.create({
   notifContainer: {
     marginHorizontal: 10,

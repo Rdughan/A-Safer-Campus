@@ -8,16 +8,22 @@ import {
   ScrollView,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useContext } from 'react';
+import { ThemeContext } from '../../context/ThemeContext';
+import { lightTheme, darkTheme } from '../../styles/themes';
 
 const AboutUsScreen = ({ navigation }) => {
+  const { isDarkMode } = useContext(ThemeContext);
+  const colors = isDarkMode ? darkTheme : lightTheme;
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
      
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { backgroundColor: colors.primary }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={28} style={styles.backIcon} />
+          <Ionicons name="arrow-back" size={28} style={[styles.backIcon, { color: colors.text }]} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>About Us</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>About Us</Text>
       </View>
 
       {/* Content */}
@@ -30,27 +36,27 @@ const AboutUsScreen = ({ navigation }) => {
         />
 
         {/* Description */}
-        <Text style={styles.title}>Campus Safety First</Text>
-        <Text style={styles.description}>
+        <Text style={[styles.title, { color: colors.text }]}>Campus Safety First</Text>
+        <Text style={[styles.description, { color: colors.text }]}>
           Our app is designed to help students stay safe by identifying crime hotspots on campus in real-time.
           Users can report incidents, view risky areas, and receive alerts about nearby danger zones.
         </Text>
 
-        <Text style={styles.description}>
+        <Text style={[styles.description, { color: colors.text }]}>
           Whether you're walking to class, heading home at night, or exploring campus, we're here to help you stay informed and safe.
         </Text>
 
-        <Text style={styles.description}>
+        <Text style={[styles.description, { color: colors.text }]}>
           Built by students, for students — because safety shouldn't be a guessing game.
         </Text>
 
         {/* Optional Additional Info */}
-        <Text style={styles.subheading}>Features:</Text>
+        <Text style={[styles.subheading, { color: colors.text }]}>Features:</Text>
         <View style={styles.bulletContainer}>
-          <Text style={styles.bullet}>• Real-time crime reports from students</Text>
-          <Text style={styles.bullet}>• Highlighted danger zones on campus</Text>
-          <Text style={styles.bullet}>• Custom alerts and preferences</Text>
-          <Text style={styles.bullet}>• Easy reporting and anonymous tips</Text>
+          <Text style={[styles.bullet, { color: colors.text }]}>• Real-time crime reports from students</Text>
+          <Text style={[styles.bullet, { color: colors.text }]}>• Highlighted danger zones on campus</Text>
+          <Text style={[styles.bullet, { color: colors.text }]}>• Custom alerts and preferences</Text>
+          <Text style={[styles.bullet, { color: colors.text }]}>• Easy reporting and anonymous tips</Text>
         </View>
       </ScrollView>
     </View>
@@ -60,10 +66,8 @@ const AboutUsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   headerContainer: {
-    backgroundColor: '#ADD8E6',
     paddingTop: 60,
    
     paddingHorizontal: 20,
@@ -78,12 +82,10 @@ const styles = StyleSheet.create({
   },
   backIcon: {
     marginRight: 20,
-    color: 'black',
   },
   headerTitle: {
     fontSize: 30,
     fontFamily: 'Montserrat-Bold',
-    color: 'black',
   },
   content: {
     padding: 20,
@@ -97,20 +99,17 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontFamily: 'Montserrat-Bold',
     marginBottom: 10,
-    color: '#000',
   },
   description: {
     fontSize: 16,
     fontFamily: 'Montserrat-Regular',
     marginBottom: 12,
-    color: '#555',
   },
   subheading: {
     fontSize: 18,
     fontFamily: 'Montserrat-SemiBold',
     marginTop: 20,
     marginBottom: 10,
-    color: '#000',
   },
   bulletContainer: {
     paddingLeft: 10,
@@ -119,7 +118,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Montserrat-Regular',
     marginBottom: 6,
-    color: '#444',
   },
 });
 
