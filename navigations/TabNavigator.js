@@ -5,6 +5,7 @@ import SettingsScreen from '../src/screens/SettingsScreen';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import NotificationsScreen from '../src/screens/NotificationsScreen';
 import ReportIncidentScreen from '../src/screens/ReportIncidentScreen';
+import RoleBasedDashboard from '../src/screens/RoleBasedDashboard';
 const Tab = createBottomTabNavigator();
 
 export default function TabNavigator() {
@@ -15,6 +16,7 @@ export default function TabNavigator() {
           let iconName;
 
           if (route.name === 'Home') iconName = 'home-outline';
+          else if (route.name === 'Dashboard') iconName = 'grid-outline';
           else if (route.name === 'Notifications') iconName = 'notifications-outline';
           else if (route.name === 'ReportIncident') iconName = 'megaphone-outline';
           else if (route.name === 'Settings') iconName = 'settings-outline';
@@ -31,6 +33,7 @@ export default function TabNavigator() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Dashboard" component={RoleBasedDashboard} />
       <Tab.Screen name="Notifications" component={NotificationsScreen} />
       <Tab.Screen name="ReportIncident" component={ReportIncidentScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />

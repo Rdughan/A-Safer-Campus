@@ -53,7 +53,9 @@ const HomeScreen = ({ route }) => {
     const fetchIncidents = async () => {
         try {
             setLoading(true);
-            const { data, error } = await incidentService.getAllIncidentsForHeatmap();
+            
+            // Use the regular getIncidents function which respects RLS policies
+            const { data, error } = await incidentService.getIncidents();
             
             if (error) {
                 console.error('Error fetching incidents:', error);
@@ -65,10 +67,14 @@ const HomeScreen = ({ route }) => {
                 return;
             }
 
+            console.log('Fetched incidents:', data?.length || 0, 'incidents');
+
             // Filter incidents with valid coordinates
-            const validIncidents = data.filter(incident => 
+            const validIncidents = (data || []).filter(incident => 
                 incident.latitude && incident.longitude
             );
+
+            console.log('Valid incidents with coordinates:', validIncidents.length);
 
             // Apply time filter if specified
             let filteredIncidents = validIncidents;
@@ -93,6 +99,7 @@ const HomeScreen = ({ route }) => {
                 );
             }
 
+            console.log('Final filtered incidents:', filteredIncidents.length);
             setIncidents(filteredIncidents);
         } catch (error) {
             console.error('Error in fetchIncidents:', error);
@@ -106,12 +113,14 @@ const HomeScreen = ({ route }) => {
         fetchIncidents();
     }, [timeFilter]);
 
-    // Convert incidents to heatmap points
-    const heatmapPoints = incidents.map(incident => ({
-        latitude: incident.latitude,
-        longitude: incident.longitude,
-        weight: getIncidentWeight(incident.incident_type),
-    }));
+    // Refresh incidents when screen comes into focus
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            fetchIncidents();
+        });
+
+        return unsubscribe;
+    }, [navigation]);
 
     // Get weight based on incident type severity
     const getIncidentWeight = (incidentType) => {
@@ -121,11 +130,20 @@ const HomeScreen = ({ route }) => {
             'harassment': 0.8,
             'vandalism': 0.6,
             'medical': 0.9,
-            'fire': 1.0,
+            'fire_attack': 1.0,
+            'snake_bite': 0.9,
+            'pickpocketing': 0.7,
             'other': 0.5,
         };
         return weights[incidentType] || 0.5;
     };
+
+    // Convert incidents to heatmap points
+    const heatmapPoints = incidents.map(incident => ({
+        latitude: incident.latitude,
+        longitude: incident.longitude,
+        weight: getIncidentWeight(incident.incident_type),
+    }));
 
     const toggleHeatmap = () => {
         setShowHeatmap(!showHeatmap);

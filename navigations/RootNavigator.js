@@ -12,6 +12,8 @@ import PrivacyScreen from '../src/screens/PrivacyScreen';
 import AboutUsScreen from '../src/screens/AboutUsScreen';
 import ReportBugScreen from '../src/screens/ReportBug';
 import SafetyMapScreen from '../src/screens/SafetyMapScreen';
+import RoleBasedDashboard from '../src/screens/RoleBasedDashboard';
+import IncidentDetailScreen from '../src/screens/IncidentDetailScreen';
 
 
 
@@ -44,6 +46,8 @@ export default function RootNavigator() {
           <Stack.Screen name="ReportBugScreen" component={ReportBugScreen} />
           <Stack.Screen name="Main" component={TabNavigator} />
           <Stack.Screen name="SafetyMap" component={SafetyMapScreen} />
+          <Stack.Screen name="RoleBasedDashboard" component={RoleBasedDashboard} />
+          <Stack.Screen name="IncidentDetail" component={IncidentDetailScreen} />
         </>
       )}
       

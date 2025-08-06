@@ -21,30 +21,28 @@ export const incidentService = {
   // Get incidents based on user role and permissions
   async getIncidents(userId = null) {
     try {
-      let query = supabase
+      // Let RLS policies handle the filtering instead of client-side role checking
+      const { data, error } = await supabase
         .from(TABLES.INCIDENTS)
         .select('*')
         .order('reported_at', { ascending: false });
+      
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
 
-      // If userId is provided, filter based on role permissions
-      if (userId) {
-        const { data: userRole, error: roleError } = await roleService.getUserRole(userId);
-        if (roleError) throw roleError;
-
-        // Students can only see their own incidents
-        if (userRole.role === USER_ROLES.STUDENT) {
-          query = query.eq('user_id', userId);
-        }
-        // Faculty can see incidents in their department
-        else if (userRole.role === USER_ROLES.FACULTY) {
-          // This would need department-based filtering if implemented
-          query = query.eq('user_id', userId);
-        }
-        // Other roles (security, fire_service, medical_service, school_management, admin) can see all incidents
-        // due to RLS policies
-      }
-
-      const { data, error } = await query;
+  // Get a single incident by ID
+  async getIncidentById(incidentId) {
+    try {
+      const { data, error } = await supabase
+        .from(TABLES.INCIDENTS)
+        .select('*')
+        .eq('id', incidentId)
+        .single();
+      
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
