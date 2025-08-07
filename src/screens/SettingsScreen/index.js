@@ -13,7 +13,19 @@ import { ThemeContext } from '../../context/ThemeContext';
 import { lightTheme, darkTheme } from '../../styles/themes';
 
 const SettingsScreen = ({ navigation }) => {
-  const { isDarkMode } = useContext(ThemeContext);
+  const themeContext = useContext(ThemeContext);
+  
+  // Handle case where context isn't available
+  if (!themeContext) {
+    console.error("ThemeContext is not available in SettingsScreen");
+    return (
+      <View style={styles.fallbackContainer}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
+  
+  const { isDarkMode } = themeContext;
   const theme = isDarkMode ? darkTheme : lightTheme;
   
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
@@ -96,7 +108,7 @@ const SettingsScreen = ({ navigation }) => {
   };
   return (
     <View style={[styles.mainContainer, { backgroundColor: theme.background }]}>
-     <View intensity={100} tint="light" style={[styles.headerContainer, { backgroundColor: isDarkMode ? '#1a1a1a' : '#Add8e6' }]}>  
+     <View intensity={100} tint="light" style={[styles.headerContainer, { backgroundColor: isDarkMode ? '#239DD6' : '#Add8e6' }]}>  
         <Text style={[styles.settingsText, { color: theme.text }]}>Settings</Text>
      </View>
 
@@ -244,5 +256,11 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 12,
     marginBottom: 15,
-  }
+  },
+  fallbackContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0', // Fallback background
+  },
 })

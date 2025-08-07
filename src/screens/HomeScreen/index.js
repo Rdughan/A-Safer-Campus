@@ -9,7 +9,19 @@ import { ThemeContext } from '../../context/ThemeContext';
 import { lightTheme, darkTheme } from '../../styles/themes';
 
 const HomeScreen = ({ route }) => {
-    const { isDarkMode } = useContext(ThemeContext);
+    const themeContext = useContext(ThemeContext);
+    
+    // Handle case where context isn't available
+    if (!themeContext) {
+        console.error("ThemeContext is not available in HomeScreen");
+        return (
+            <View style={styles.fallbackContainer}>
+                <Text>Loading...</Text>
+            </View>
+        );
+    }
+    
+    const { isDarkMode } = themeContext;
     const theme = isDarkMode ? darkTheme : lightTheme;
     
     const [errorMsg, setErrorMsg] = useState(null);
@@ -624,7 +636,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   retryButton: {
-    backgroundColor: '#239DD6',
+    backgroundColor: isDarkMode ? '#239DD6' : '#ADD8E6',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
@@ -638,7 +650,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: Platform.OS === 'ios' ? 120 : 100,
     right: 20,
-    backgroundColor: '#239DD6',
+    backgroundColor: isDarkMode ? '#239DD6' : '#ADD8E6',
     width: 50,
     height: 50,
     borderRadius: 25,
@@ -649,5 +661,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: Platform.OS === 'ios' ? 0.25 : 0,
     shadowRadius: Platform.OS === 'ios' ? 3.84 : 0,
+  },
+  fallbackContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
   },
 })

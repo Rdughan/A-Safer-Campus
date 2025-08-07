@@ -1,19 +1,29 @@
 // components/InputField.js
 import React from 'react';
-import { View, TextInput, StyleSheet } from 'react-native';
+import { View, TextInput, StyleSheet, Text } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-
+  
 const InputField = ({
-  placeholder = 'Enter text',
-  iconName = 'email-outline',
-  iconColor = '#97999C',
+  iconName,
+  placeholder,
   value,
   onChangeText,
-  style = {},
+  secureTextEntry = false,
+  keyboardType = 'default',
+  multiline = false,
+  numberOfLines = 1,
+  iconColor = '#000',
+  style,
   ...rest
 }) => {
   return (
-    <View style={[styles.inputContainer, style]}>
+    <View style={[
+      styles.inputContainer, 
+      { 
+        backgroundColor: '#E6E7E8' // Always light color for login/signup inputs
+      },
+      style
+    ]}>
       <MaterialCommunityIcons
         name={iconName}
         size={24}
@@ -23,9 +33,16 @@ const InputField = ({
       <TextInput
         placeholder={placeholder}
         placeholderTextColor="#888"
-        style={styles.textInput}
+        style={[
+          styles.textInput,
+          { color: '#000' } // Always black text for login/signup inputs
+        ]}
         value={value}
         onChangeText={onChangeText}
+        secureTextEntry={secureTextEntry}
+        keyboardType={keyboardType}
+        multiline={multiline}
+        numberOfLines={numberOfLines}
         {...rest}
       />
     </View>
@@ -33,6 +50,9 @@ const InputField = ({
 };
 
 export default InputField;
+
+
+
 
 const styles = StyleSheet.create({
   inputContainer: {
@@ -42,9 +62,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 10,
-    width:'90%'
-   
-    
+    width:'90%' 
   },
   icon: {
     marginRight: 8,

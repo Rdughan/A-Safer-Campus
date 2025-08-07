@@ -97,14 +97,14 @@ const EditProfileScreen = ({navigation}) => {
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: colors.background }]}>
-      <View style={[styles.headerContainer, { backgroundColor: colors.primary }]}>
+      <View style={[styles.headerContainer, { backgroundColor: isDarkMode ? '#239DD6' : '#ADD8E6' }]}>
          <TouchableOpacity style ={styles.arrow} onPress={() => navigation.goBack()}>    
             <Ionicons name="arrow-back" size={24} color={colors.text} />     
          </TouchableOpacity>
 
         <Text style={[styles.editProfileText, { color: colors.text }]}>Edit Profile</Text>
         <TouchableOpacity style={styles.checkmark} onPress={() => navigation.goBack()}>
-            <Ionicons name="checkmark" size={30} color="#32CD32"  />   
+            <Ionicons name="checkmark" size={30} color={isDarkMode ? "#FFFFFF" : "#32CD32"}  />   
         </TouchableOpacity>
 
       </View>

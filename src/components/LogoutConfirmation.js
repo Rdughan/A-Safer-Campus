@@ -1,24 +1,37 @@
 import { StyleSheet, Text, View, Image, Modal } from 'react-native';
-import React, {useState} from 'react';
+import React, {useState, useContext} from 'react';
 import CustomButton from './CustomButton';
+import { ThemeContext } from '../context/ThemeContext';
+import { lightTheme, darkTheme } from '../styles/themes';
 
 const LogoutConfirmation = ({ visible, onCancel, onConfirm }) => {
+  const themeContext = useContext(ThemeContext);
+  
+  // Handle case where context isn't available
+  if (!themeContext) {
+    console.error("ThemeContext is not available in LogoutConfirmation");
+    return null;
+  }
+  
+  const { isDarkMode } = themeContext;
+  const colors = isDarkMode ? darkTheme : lightTheme;
+
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onCancel}>
       <View style={styles.container}>
-        <View style={styles.mainContainer}>
+        <View style={[styles.mainContainer, { backgroundColor: colors.background }]}>
           <Image source={require('./logoutMedia/logoutIcon.png')} style={styles.logoutIcon} />
-          <Text style={styles.question}>Are You Sure You Want To Logout?</Text>
-          <Text style={styles.subQuestion}>
+          <Text style={[styles.question, { color: colors.text }]}>Are You Sure You Want To Logout?</Text>
+          <Text style={[styles.subQuestion, { color: colors.text }]}>
             You can log in to your account anytime. Do you still want to logout?
           </Text>
           
           <CustomButton
             buttonText="Logout"
             backgroundColor="transparent"
-            textColor="black"
+            textColor={colors.text}
             borderWidth={1}
-            borderColor={'#239DD6'}
+            borderColor="#239DD6"
             onPress={onConfirm}
           />
           <CustomButton buttonText="Cancel" backgroundColor="#239DD6" onPress={onCancel} />

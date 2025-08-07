@@ -190,8 +190,8 @@ export default function ReportIncidentScreen() {
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: colors.background }]}> 
-      <View style={[styles.headerContainer, { backgroundColor: colors.primary }]}> 
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Report Incident</Text>
+      <View style={[styles.headerContainer, { backgroundColor: isDarkMode ? '#239DD6' : '#ADD8E6' }]}> 
+      <Text style={[styles.headerTitle, { color: colors.text }]}>Report Incident</Text>
       </View>
       <ScrollView style={[styles.scrollContainer, { backgroundColor: colors.background }]}> 
         <View style={styles.toggleRow}>
@@ -375,13 +375,14 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
     padding: 20,
-    marginTop: 150,
+    marginTop: 125,
     paddingBottom:40
     
   },
    mainContainer: {
     flex: 1,
     width: '100%',
+    
     
   },
    
@@ -396,7 +397,7 @@ const styles = StyleSheet.create({
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.15,
       shadowRadius: 3.84,
- 
+      
   },
   backArrow: {
     fontSize: 25,
@@ -514,6 +515,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginTop: 20,
     alignItems: 'center',
+    marginBottom:'10%'
   },
   submitText: {
     color: '#fff',

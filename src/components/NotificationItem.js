@@ -1,15 +1,25 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { ThemeContext } from '../context/ThemeContext';
 
-const NotificationItem = ({ item, backgroundColor, borderColor, textColor, timeColor }) => {  // <-- Added closing '}) => {'
+const NotificationItem = ({ item, backgroundColor, borderColor, textColor, timeColor }) => {
+  const themeContext = useContext(ThemeContext);
+  
+  // Handle case where context isn't available
+  if (!themeContext) {
+    console.error("ThemeContext is not available in NotificationItem");
+    return null;
+  }
+  
+  const { isDarkMode } = themeContext;
 
   return (
     <TouchableOpacity>
       <View style={[
         styles.notifContainer, 
         { 
-          backgroundColor,
+          backgroundColor: isDarkMode ? '#2A2A2A' : backgroundColor,
           borderBottomColor: borderColor || 'transparent'
         }
       ]}>
@@ -33,7 +43,7 @@ const NotificationItem = ({ item, backgroundColor, borderColor, textColor, timeC
             {item.status}
           </Text>
         </View>
-        <Text style={[styles.time, { color: timeColor }]}>
+        <Text style={[styles.time, { color: isDarkMode ? '#FFFFFF' : timeColor }]}>
           {item.time}
         </Text>
       </View>

@@ -1,9 +1,22 @@
 import { StyleSheet, Text, View, Image, Modal } from 'react-native';
-import React from 'react';
+import React, { useContext } from 'react';
 import CustomButton from './CustomButton';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { ThemeContext } from '../context/ThemeContext';
+import { lightTheme, darkTheme } from '../styles/themes';
 
 const CampusAlertModal = ({ visible, onClose, title, message, type = 'success' }) => {
+  const themeContext = useContext(ThemeContext);
+  
+  // Handle case where context isn't available
+  if (!themeContext) {
+    console.error("ThemeContext is not available in CampusAlertModal");
+    return null;
+  }
+  
+  const { isDarkMode } = themeContext;
+  const colors = isDarkMode ? darkTheme : lightTheme;
+
   const getIcon = () => {
     switch (type) {
       case 'success':
@@ -33,10 +46,10 @@ const CampusAlertModal = ({ visible, onClose, title, message, type = 'success' }
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
       <View style={styles.container}>
-        <View style={styles.mainContainer}>
+        <View style={[styles.mainContainer, { backgroundColor: colors.background }]}>
           <Icon name={getIcon()} size={80} color={getIconColor()} style={styles.icon} />
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+          <Text style={[styles.message, { color: colors.text }]}>{message}</Text>
           
           <CustomButton 
             buttonText="OK" 

@@ -10,7 +10,16 @@ import { ThemeContext } from '../src/context/ThemeContext'
 const Tab = createBottomTabNavigator();
 
 export default function TabNavigator() {
-  const { isDarkMode } = useContext(ThemeContext);
+  const themeContext = useContext(ThemeContext);
+  
+  // Handle case where context isn't available
+  if (!themeContext) {
+    console.error("ThemeContext is not available in TabNavigator");
+    return null;
+  }
+  
+  const { isDarkMode } = themeContext;
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({

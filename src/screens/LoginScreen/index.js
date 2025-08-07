@@ -114,7 +114,8 @@ const styles = StyleSheet.create({
       position:'absolute'
     },
     inputOverride:{
-      height:55
+      height:55,
+      
     },
     forgotText:{
       color:'#239DD6',

@@ -5,7 +5,15 @@ import { ThemeContext } from '../context/ThemeContext';
 import { lightTheme, darkTheme } from '../styles/themes';
 
 const SettingsOption = ({ iconName, label, onPress }) => {
-  const { isDarkMode } = useContext(ThemeContext);
+  const themeContext = useContext(ThemeContext);
+  
+  // Handle case where context isn't available
+  if (!themeContext) {
+    console.error("ThemeContext is not available in SettingsOption");
+    return null;
+  }
+  
+  const { isDarkMode } = themeContext;
   const theme = isDarkMode ? darkTheme : lightTheme;
 
   return (

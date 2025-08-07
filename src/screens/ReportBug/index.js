@@ -31,7 +31,7 @@ const ReportBugScreen = ({ navigation }) => {
   return (
     <View style={[styles.mainContainer, { backgroundColor: colors.background }]}>
       
-      <View style={[styles.headerContainer, { backgroundColor: colors.primary }]}>
+      <View style={[styles.headerContainer, { backgroundColor: isDarkMode ? '#239DD6' : '#ADD8E6' }]}>
         <View style={{flexDirection:'row', gap:10, position:'absolute', bottom:20, alignItems:'center',gap:15,padding:15 }}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={25} color={colors.text} style={styles.backArrow} />

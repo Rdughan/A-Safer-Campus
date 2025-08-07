@@ -1,6 +1,8 @@
 // components/ConfirmDeleteModal.js
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+import { ThemeContext } from '../context/ThemeContext';
+import { lightTheme, darkTheme } from '../styles/themes';
 
 const ConfirmDeleteModal = ({ 
   visible, 
@@ -10,6 +12,16 @@ const ConfirmDeleteModal = ({
 }) => {
   const [password, setPassword] = useState('');
   const [isChecked, setIsChecked] = useState(false);
+  const themeContext = useContext(ThemeContext);
+  
+  // Handle case where context isn't available
+  if (!themeContext) {
+    console.error("ThemeContext is not available in ConfirmDeleteModal");
+    return null;
+  }
+  
+  const { isDarkMode } = themeContext;
+  const colors = isDarkMode ? darkTheme : lightTheme;
 
   const handleConfirm = () => {
     onConfirm(password);
@@ -25,12 +37,17 @@ const ConfirmDeleteModal = ({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={styles.container}>
-          <Text style={styles.title}>Confirm Deletion</Text>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+          <Text style={[styles.title, { color: colors.text }]}>Confirm Deletion</Text>
           
           <TextInput
-            style={styles.input}
+            style={[styles.input, { 
+              backgroundColor: isDarkMode ? '#3A3A3A' : '#F5F5F5',
+              color: colors.text,
+              borderColor: colors.border
+            }]}
             placeholder="Enter Password"
+            placeholderTextColor={isDarkMode ? '#AAAAAA' : '#888'}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
@@ -39,28 +56,33 @@ const ConfirmDeleteModal = ({
           <View style={styles.checkboxContainer}>
             {/* Use your preferred checkbox component */}
             <TouchableOpacity 
-              style={[styles.checkbox, isChecked && styles.checked]}
+              style={[
+                styles.checkbox, 
+                { borderColor: colors.border },
+                isChecked && { backgroundColor: '#239DD6', borderColor: '#239DD6' }
+              ]}
               onPress={() => setIsChecked(!isChecked)}
             >
-              {isChecked && <Text>✓</Text>}
+              {isChecked && <Text style={{ color: 'white' }}>✓</Text>}
             </TouchableOpacity>
-            <Text style={styles.checkboxLabel}>
+            <Text style={[styles.checkboxLabel, { color: colors.text }]}>
               I understand this will permanently delete all my data
             </Text>
           </View>
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity 
-              style={styles.cancelButton}
+              style={[styles.cancelButton, { backgroundColor: colors.border }]}
               onPress={onClose}
               disabled={isLoading}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={[styles.buttonText, { color: colors.text }]}>Cancel</Text>
             </TouchableOpacity>
             
             <TouchableOpacity
               style={[
                 styles.confirmButton,
+                { backgroundColor: colors.primary },
                 (!password || !isChecked) && styles.disabledButton
               ]}
               onPress={handleConfirm}

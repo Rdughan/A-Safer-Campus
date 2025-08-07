@@ -10,21 +10,30 @@ import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import RootNavigator from './navigations/RootNavigator';
-import LogoutConfirmation from './src/components/LogoutConfirmation';
-import PreferencesScreen from './src/screens/PreferencesScreen';
-import NotificationsScreen from './src/screens/NotificationsScreen';
-import EditProfileScreen from './src/screens/EditProfileScreen';
-import SuccessScreen from './src/screens/SuccessScreen';
-import FailedScreen from './src/screens/FailedScreen';
-import ReportIncidentScreen from './src/screens/ReportIncidentScreen';
 import { ThemeProvider, ThemeContext } from './src/context/ThemeContext';
 import React, { useContext } from 'react';
-const AppContent = () => {
-  const { isDarkMode } = useContext(ThemeContext);
+import themes from './src/styles/themes';
+
+const AppContent = ({ isLoggedIn }) => {
+  const themeContext = useContext(ThemeContext);
+  
+  // Handle case where context isn't available
+  if (!themeContext) {
+    console.error("ThemeContext is not available in AppContent");
+    return (
+      <View style={styles.container}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
+  
+  const { isDarkMode } = themeContext;
+  
+  console.log('ThemeContext is working, isDarkMode:', isDarkMode);
   
   return (
     <NavigationContainer>
-      <RootNavigator />
+      <RootNavigator isLoggedIn={isLoggedIn} />
       <StatusBar style={isDarkMode ? "light" : "dark"} />
     </NavigationContainer>
   );
@@ -32,13 +41,23 @@ const AppContent = () => {
 
 export default function App() {
   const fontsLoaded = useLoadFonts();
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false); // Example state for login
+
   if (!fontsLoaded) {
     return null; // Prevents rendering until fonts load
   }
+
+  // If the user is logged in, apply the theme provider
   return (
-    <ThemeProvider> 
-      <AppContent />
-    </ThemeProvider>
+    <>
+      {isLoggedIn ? (
+        <ThemeProvider> {/* Only wrap the main screens with ThemeProvider */}
+          <AppContent isLoggedIn={isLoggedIn} />
+        </ThemeProvider>
+      ) : (
+        <AppContent isLoggedIn={isLoggedIn} /> // Onboarding and Login screens without theme context
+      )}
+    </>
   );
 }
 
@@ -49,5 +68,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  
 });
