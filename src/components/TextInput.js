@@ -12,18 +12,24 @@ const InputField = ({
   style = {},
   ...rest
 }) => {
+  // Accept isDarkMode from parent
+  const isDarkMode = rest.isDarkMode;
+  const inputBgColor = isDarkMode ? '#2a2a2a' : '#E6E7E8';
+  const inputTextColor = isDarkMode ? '#fff' : '#000';
+  const placeholderColor = isDarkMode ? '#aaa' : '#888';
+  const iconTint = isDarkMode ? '#ccc' : iconColor;
   return (
-    <View style={[styles.inputContainer, style]}>
+    <View style={[styles.inputContainer, { backgroundColor: inputBgColor }, style]}>
       <MaterialCommunityIcons
         name={iconName}
         size={24}
-        color={iconColor}
+        color={iconTint}
         style={styles.icon}
       />
       <TextInput
         placeholder={placeholder}
-        placeholderTextColor="#888"
-        style={styles.textInput}
+        placeholderTextColor={placeholderColor}
+        style={[styles.textInput, { color: inputTextColor }]}
         value={value}
         onChangeText={onChangeText}
         {...rest}

@@ -190,8 +190,8 @@ export default function ReportIncidentScreen() {
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: colors.background }]}> 
-      <View style={[styles.headerContainer, { backgroundColor: colors.primary }]}> 
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Report Incident</Text>
+      <View style={[styles.headerContainer, { backgroundColor: isDarkMode ? '#239DD6' : '#ADD8E6' }]}> 
+      <Text style={[styles.headerTitle, { color: colors.text }]}>Report Incident</Text>
       </View>
       <ScrollView style={[styles.scrollContainer, { backgroundColor: colors.background }]}> 
         <View style={styles.toggleRow}>
@@ -235,8 +235,9 @@ export default function ReportIncidentScreen() {
       mode="time"
       display={Platform.OS === 'ios' ? 'spinner' : 'default'}
       onChange={handleTimeChange}
-      themeVariant="light"
+      themeVariant={isDarkMode ? 'dark' : 'light'}
       accentColor="#70C8E6"
+      textColor={isDarkMode ? '#fff' : undefined} // Makes spinner text white in dark mode (iOS only)
     />
     {Platform.OS === 'ios' && (
       <TouchableOpacity 
@@ -249,11 +250,15 @@ export default function ReportIncidentScreen() {
   </View>
 )}
       <TextInput
-        style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.border }]}
+        style={[
+          styles.input,
+          { backgroundColor: colors.inputBackground, borderColor: colors.border },
+          isDarkMode && { color: '#fff' }
+        ]}
         placeholder="Location on Campus"
         value={location}
         onChangeText={setLocation}
-        placeholderTextColor={colors.placeholderText}
+        placeholderTextColor={isDarkMode ? '#ccc' : colors.placeholderText}
       />
 
       <Text style={[styles.label, { color: colors.text }]}>Select Incident Type</Text>
@@ -263,16 +268,15 @@ export default function ReportIncidentScreen() {
             key={type}
             style={[
               styles.typeButton,
-              incidentType === type && styles.typeButtonSelected,
-              { backgroundColor: isDarkMode ? colors.card : '#E2E8F0', borderColor: isDarkMode ? colors.border : '#E2E8F0' }
+              { backgroundColor: isDarkMode ? colors.card : '#E2E8F0', borderColor: isDarkMode ? colors.border : '#E2E8F0' },
+              incidentType === type && { backgroundColor: '#239DD6', borderColor: '#239DD6' }
             ]}
             onPress={() => setIncidentType(type)}
           >
             <Text
               style={[
                 styles.typeText,
-                incidentType === type && styles.typeTextSelected,
-                { color: isDarkMode ? colors.text : '#334155' }
+                (isDarkMode || incidentType === type) && { color: '#fff', fontWeight: 'bold' }
               ]}
             >
               {type}
@@ -283,13 +287,17 @@ export default function ReportIncidentScreen() {
 
       {incidentType === 'Other' && (
         <TextInput
-          style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.border }]}
+          style={[
+            styles.input,
+            { backgroundColor: colors.inputBackground, borderColor: colors.border },
+            isDarkMode && { color: '#fff' }
+          ]}
           placeholder="Describe the incident"
           multiline
           numberOfLines={4}
           value={description}
           onChangeText={setDescription}
-          placeholderTextColor={colors.placeholderText}
+          placeholderTextColor={isDarkMode ? '#ccc' : colors.placeholderText}
         />
       )}
 
@@ -299,8 +307,9 @@ export default function ReportIncidentScreen() {
       </View>
 
       <Animated.View style={{ transform: [{ scale: showSubmitAnimation }] }}>
-        <TouchableOpacity style={[styles.submitButton, { backgroundColor: colors.primary }]} onPress={handleSubmit}>
-          <Text style={[styles.submitText, { color: colors.text }]}><Ionicons name="send-outline" size={18} /> Submit Report</Text>
+        <TouchableOpacity style={[styles.submitButton, { backgroundColor:isDarkMode ? '#239DD6' : colors.primary}]} onPress={handleSubmit}>
+          <Text style={[styles.submitText,{ color: isDarkMode ? colors.text : '#fff' }
+]}><Ionicons name="send-outline" size={18} /> Submit Report</Text>
         </TouchableOpacity>
       </Animated.View>
     </ScrollView>
@@ -375,13 +384,14 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
     padding: 20,
-    marginTop: 150,
+    marginTop: 125,
     paddingBottom:40
     
   },
    mainContainer: {
     flex: 1,
     width: '100%',
+    
     
   },
    
@@ -396,7 +406,7 @@ const styles = StyleSheet.create({
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.15,
       shadowRadius: 3.84,
- 
+      
   },
   backArrow: {
     fontSize: 25,
@@ -486,16 +496,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    marginVertical: 10,
+    marginVertical: 10, 
+    
   },
   typeButton: {
     backgroundColor: '#E2E8F0',
     borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    marginRight: 8,
-    marginBottom: 8,
-  },
+    padding:10,
+    borderWidth:0, 
+    width:'auto'
+   },
   typeButtonSelected: {
     backgroundColor: '#239DD6',
   },
@@ -514,6 +524,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginTop: 20,
     alignItems: 'center',
+    marginBottom:'10%'
   },
   submitText: {
     color: '#fff',

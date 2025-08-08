@@ -25,22 +25,11 @@ const NotificationsScreen = ({ navigation }) => {
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: theme.background }]}>
-      <BlurView 
-        intensity={100} 
-        tint={isDarkMode ? 'dark' : 'light'} 
-        style={[
-          styles.headerContainer, 
-          { 
-            backgroundColor: isDarkMode ? '#1a1a1a' : '#ADD8E6',
-          }
-        ]}
-      >
-        <View style={styles.headerContent}>
-          <Text style={[styles.notificationsText, { color: theme.text }]}>
-            Notifications
-          </Text>
-        </View>
-      </BlurView>
+      <View style={[styles.headerContainer, { backgroundColor: isDarkMode ? '#239DD6' : '#ADD8E6' }]}>
+        <Text style={[styles.notificationsText, { color: theme.text }]}>
+          Notifications
+        </Text>
+      </View>
 
       <FlatList
         data={NotificationData}
@@ -48,14 +37,14 @@ const NotificationsScreen = ({ navigation }) => {
         renderItem={({ item }) => (
           <NotificationItem 
             item={item} 
-            backgroundColor={theme.cardBackground}
+            backgroundColor={isDarkMode ? '#2a2a2a' : '#E6E7E8'}
             textColor={theme.text}
-            timeColor={theme.secondaryText}
+            timeColor={isDarkMode ? '#fff' : theme.secondaryText}
           />
         )}
         contentContainerStyle={{ 
           paddingBottom: 30, 
-          marginTop: 20,
+          marginTop: 140,
           backgroundColor: theme.background 
         }}
       />
@@ -75,27 +64,22 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     height: '15%',
+    position: 'absolute',
+    zIndex: 100,
+    width: '100%',
     borderRadius: 20,
     elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 3.84,
-    justifyContent: 'flex-end',
-    paddingBottom: 20,
-    paddingLeft: 20,
-    overflow: 'hidden', // Important for BlurView on Android
-  },
-  headerContent: {
-    flexDirection: 'row', 
-    gap: 7, 
-    alignItems: 'center', 
-    
+    marginBottom:'20%'
   },
   notificationsText: {
     fontSize: 30,
     fontFamily: 'Montserrat-Bold',
-    marginBottom: 10,
+    left: 20,
+    top: 70,
   },
 });
 

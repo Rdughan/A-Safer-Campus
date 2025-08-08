@@ -27,7 +27,7 @@ const PrivacyScreen = ({ navigation }) => {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
-      <View style={[styles.headerContainer, { backgroundColor: isDarkMode ? '#1a1a1a' : PRIMARY_BLUE }]}>
+      <View style={[styles.headerContainer, { backgroundColor: isDarkMode ? '#239DD6' : PRIMARY_BLUE }]}>
           <View style ={{flexDirection:'row', alignItems:'center'}}> 
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <Ionicons name="arrow-back" size={25} color={theme.text} style={styles.backArrow} />

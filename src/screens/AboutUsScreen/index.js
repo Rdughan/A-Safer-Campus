@@ -19,7 +19,8 @@ const AboutUsScreen = ({ navigation }) => {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
      
-      <View style={[styles.headerContainer, { backgroundColor: colors.primary }]}>
+      <View style={[styles.headerContainer,{ backgroundColor: isDarkMode ? '#239DD6' : '#ADD8E6' }
+]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={28} style={[styles.backIcon, { color: colors.text }]} />
         </TouchableOpacity>

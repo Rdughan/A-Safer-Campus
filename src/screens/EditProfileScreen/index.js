@@ -97,14 +97,15 @@ const EditProfileScreen = ({navigation}) => {
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: colors.background }]}>
-      <View style={[styles.headerContainer, { backgroundColor: colors.primary }]}>
+      <View style={[styles.headerContainer,  { backgroundColor: isDarkMode ? '#239DD6' : '#ADD8E6' }
+]}>
          <TouchableOpacity style ={styles.arrow} onPress={() => navigation.goBack()}>    
             <Ionicons name="arrow-back" size={24} color={colors.text} />     
          </TouchableOpacity>
 
         <Text style={[styles.editProfileText, { color: colors.text }]}>Edit Profile</Text>
         <TouchableOpacity style={styles.checkmark} onPress={() => navigation.goBack()}>
-            <Ionicons name="checkmark" size={30} color="#32CD32"  />   
+            <Ionicons name="checkmark" size={30} color={isDarkMode ? '#fff' : '#32CD32'}  />   
         </TouchableOpacity>
 
       </View>
@@ -122,13 +123,13 @@ const EditProfileScreen = ({navigation}) => {
 
         <View style={styles.inputView}>
           <Text style={[styles.inputTitle, { color: colors.text }]}>Name</Text>
-                <InputField placeholder="John Doe" iconName="email-outline" value={name} onChangeText={setName} style={styles.inputOverride}/>            
+                <InputField placeholder="John Doe" iconName="email-outline" value={name} onChangeText={setName} style={styles.inputOverride} isDarkMode={isDarkMode}/>            
               <Text style={[styles.inputTitle, { color: colors.text }]}>Email Address</Text>
-                <InputField placeholder="johndoe@gmail.com" iconName="email-outline" value={email} onChangeText={setEmail} style={styles.inputOverride}/>
+                <InputField placeholder="johndoe@gmail.com" iconName="email-outline" value={email} onChangeText={setEmail} style={styles.inputOverride} isDarkMode={isDarkMode}/>
                  <Text style={[styles.inputTitle, { color: colors.text }]}>Password</Text>
-                <InputField placeholder="Password" iconName="key-outline" value={password} secureTextEntry={true} onChangeText={setPassword} style={styles.inputOverride} />
+                <InputField placeholder="Password" iconName="key-outline" value={password} secureTextEntry={true} onChangeText={setPassword} style={styles.inputOverride} isDarkMode={isDarkMode}/>
                   <Text style={[styles.inputTitle, { color: colors.text }]}>Phone Number</Text>
-                 <InputField placeholder="0202222233" iconName="phone-outline" value={Phone} onChangeText={setPhone} style={styles.inputOverride} />
+                 <InputField placeholder="0202222233" iconName="phone-outline" value={Phone} onChangeText={setPhone} style={styles.inputOverride} isDarkMode={isDarkMode}/>
               </View>  
 
       {/* Image Options Modal */}
