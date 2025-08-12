@@ -17,8 +17,20 @@ import EditProfileScreen from './src/screens/EditProfileScreen';
 import SuccessScreen from './src/screens/SuccessScreen';
 import FailedScreen from './src/screens/FailedScreen';
 import ReportIncidentScreen from './src/screens/ReportIncidentScreen';
-import { ThemeProvider } from './src/context/ThemeContext';
+import { ThemeProvider, ThemeContext } from './src/context/ThemeContext';
 import { AuthProvider } from './src/context/AuthContext';
+import React, { useContext } from 'react';
+
+const AppContent = () => {
+  const { isDarkMode } = useContext(ThemeContext);
+  
+  return (
+    <NavigationContainer>
+      <RootNavigator />
+      <StatusBar style={isDarkMode ? "light" : "dark"} />
+    </NavigationContainer>
+  );
+};
 
 export default function App() {
   const fontsLoaded = useLoadFonts();
@@ -28,10 +40,7 @@ export default function App() {
   return (
     <AuthProvider>
       <ThemeProvider> 
-        <NavigationContainer>
-          <RootNavigator />
-          <StatusBar style="auto" />
-         </NavigationContainer>
+        <AppContent />
       </ThemeProvider>
     </AuthProvider>
   );

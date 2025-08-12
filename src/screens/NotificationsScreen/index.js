@@ -5,17 +5,20 @@ import NotificationItem from '../../components/NotificationItem';
 import {NotificationData} from '../../components/Data/NotificationData.js'
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { useTheme } from '../../hooks/useTheme';
 
 const NotificationsScreen = ({navigation}) => {
+  const { theme, isDarkMode } = useTheme();
+  
   return (
-    <View style={styles.mainContainer}>
-      <View intensity={100} tint="light" style={styles.headerContainer}>
+    <View style={[styles.mainContainer, { backgroundColor: theme.background }]}>
+      <View intensity={100} tint="light" style={[styles.headerContainer, { backgroundColor: isDarkMode ? '#239DD6' : '#Add8e6' }]}>
             
 
                 
                  <View style={{flexDirection:'row' , gap:7, alignItems:'center', justifyContent:'c'}}>
                  
-                  <Text style={styles.notificationsText}>Notifications</Text>
+                  <Text style={[styles.notificationsText, { color: theme.text }]}>Notifications</Text>
                   </View>
           </View>
 
@@ -34,11 +37,9 @@ export default NotificationsScreen
 const styles = StyleSheet.create({
     mainContainer:{
         flex:1,
-        backgroundColor:'white',
         width:'100%',
     },
      headerContainer:{
-        backgroundColor:'#Add8e6',
         height:'15%', 
         borderRadius:20,
          elevation:5,
@@ -50,7 +51,6 @@ const styles = StyleSheet.create({
     },
     backArrow:{
        fontSize:25,
-         color:'black',
          left:20,
          top:50,
     },

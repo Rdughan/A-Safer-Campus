@@ -1,5 +1,5 @@
 import { StyleSheet, Text, TouchableOpacity, View,ScrollView,Alert, Modal } from 'react-native'
-import React, {useState} from 'react'
+import React, {useState, useContext} from 'react'
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import SettingsOption from '../../components/SettingsOption';
 import CustomButton from '../../components/CustomButton'
@@ -9,8 +9,25 @@ import LogoutConfirmation from '../../components/LogoutConfirmation'
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import ConfirmDeleteModal from '../../modals/ConfirmDeleteModal';
+import { ThemeContext } from '../../context/ThemeContext';
+import { lightTheme, darkTheme } from '../../styles/themes';
 
 const SettingsScreen = ({ navigation }) => {
+  const themeContext = useContext(ThemeContext);
+  
+  // Handle case where context isn't available
+  if (!themeContext) {
+    console.error("ThemeContext is not available in SettingsScreen");
+    return (
+      <View style={styles.fallbackContainer}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
+  
+  const { isDarkMode } = themeContext;
+  const theme = isDarkMode ? darkTheme : lightTheme;
+
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
  const handleLogoutPress = () => {
@@ -90,26 +107,26 @@ const SettingsScreen = ({ navigation }) => {
     });
   };
   return (
-    <View style={styles.mainContainer}>
-     <View intensity={100} tint="light" style={styles.headerContainer}>  
-        <Text style={styles.settingsText}>Settings</Text>
+    <View style={[styles.mainContainer, { backgroundColor: theme.background }]}>
+     <View intensity={100} tint="light" style={[styles.headerContainer, { backgroundColor: isDarkMode ? '#239DD6' : '#Add8e6' }]}>  
+        <Text style={[styles.settingsText, { color: theme.text }]}>Settings</Text>
      </View>
 
   <ScrollView contentContainerStyle={styles.scrollContent}>
-     <Text style ={styles.sectionName}>GENERAL</Text>
+     <Text style={[styles.sectionName, { color: theme.text }]}>GENERAL</Text>
          <SettingsOption iconName="person-outline" label="Account" onPress={() => navigation.navigate('EditProfileScreen')} />  
          <SettingsOption iconName="lock-closed-outline" label="Privacy" onPress={() => navigation.navigate('PrivacyScreen')} />
              <SettingsOption iconName="options-outline" label="Preferences" onPress={() => navigation.navigate('PreferencesScreen')}  />
          <SettingsOption iconName="information-circle-outline" label="About Us" onPress={() => navigation.navigate('AboutUsScreen')}  />
          <SettingsOption iconName="trash-outline" label="Delete Account" onPress={handleDeletePress} />
    
-    <Text style ={styles.sectionName}>FEEDBACK</Text>
+    <Text style={[styles.sectionName, { color: theme.text }]}>FEEDBACK</Text>
         <SettingsOption iconName="warning-outline" label="Report a bug" onPress={() => navigation.navigate('ReportBugScreen')} />
         <SettingsOption iconName="share-outline" label="Send Feedback" onPress={() => {}}/>
         
         
        <TouchableOpacity 
-               style={styles.logoutContainer} 
+               style={[styles.logoutContainer, { backgroundColor: theme.background, borderColor: theme.border }]} 
                activeOpacity={0.7}
                onPress={handleLogoutPress} 
              >
@@ -137,6 +154,11 @@ const SettingsScreen = ({ navigation }) => {
 export default SettingsScreen
 
 const styles = StyleSheet.create({
+    fallbackContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     mainContainer:{
         flex:1,
         width:'100%',

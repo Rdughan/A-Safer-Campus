@@ -4,9 +4,10 @@ import InputField from '../../components/TextInput';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import SuccessModal from '../SuccessScreen';
 import { useAuth } from '../../context/AuthContext';
-
+import { useTheme } from '../../hooks/useTheme';
 
 const SignUpScreen = ({navigation}) => {
+  const { theme, isDarkMode } = useTheme();
   const [email, setEmail] = useState('');
   const [studentID, setStudentID] = useState('');
   const [password, setPassword] = useState('');
@@ -72,20 +73,20 @@ const SignUpScreen = ({navigation}) => {
   
   return (
      
-    <View style ={styles.mainContainer}>
+    <View style={[styles.mainContainer, { backgroundColor: isDarkMode ? theme.background : '#91D8F7' }]}>
           <Image 
                     source={require('./media/abstract.png')} 
                     style={styles.abstractImage}
                   />
            
-          <View style ={styles.drawerContainer}>
+          <View style={[styles.drawerContainer, { backgroundColor: theme.card }]}>
             <TouchableOpacity style ={styles.backToLoginView}
               onPress={() => navigation.goBack()}> 
-              <Ionicons name="arrow-back" size={20} color="#000" />
-                <Text style ={styles.backText}>Back to login</Text>
+              <Ionicons name="arrow-back" size={20} color={theme.text} />
+                <Text style={[styles.backText, { color: theme.text }]}>Back to login</Text>
                  
             </TouchableOpacity>
-            <Text style ={styles.signUpText}>Sign Up</Text>
+            <Text style={[styles.signUpText, { color: theme.text }]}>Sign Up</Text>
 
               <View style={styles.inputView}>
                 <InputField placeholder="Email" iconName="email-outline" value={email} onChangeText={setEmail} style={styles.inputOverride}/>            
@@ -119,13 +120,11 @@ export default SignUpScreen
 const styles = StyleSheet.create({
    mainContainer:{
         flex:1,
-        backgroundColor:'#91D8F7',
         width:'100%',    
         height:'100%'
     },
     drawerContainer:{ 
     width:'100%',
-    backgroundColor:'white',
     position:'absolute',
     height:'80%',
     bottom:0,
@@ -135,7 +134,6 @@ const styles = StyleSheet.create({
     fontFamily:'Montserrat-Regular'
   },
   signUpText:{
-      color:'black',
       fontFamily:'Montserrat-Bold',
       fontSize:40,
       padding:'5%',
@@ -146,7 +144,9 @@ const styles = StyleSheet.create({
     inputOverride:{
       marginHorizontal:20,
       marginTop:25,
-      top:100,   
+      top:100,  
+      backgroundColor:'#D3D3D3',
+ 
     },
      loginContainer:{
       backgroundColor:'#239DD6',

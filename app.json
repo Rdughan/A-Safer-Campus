@@ -13,18 +13,41 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app needs access to location to show your current position on the safety map and provide location-based safety information.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to location to show your current position on the safety map and provide location-based safety information."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "scheme": "safecampus"
+    "scheme": "safecampus",
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow A Safer Campus to use your location to show your current position on the safety map and provide location-based safety information."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow A Safer Campus to access your photos to add evidence to incident reports.",
+          "cameraPermission": "Allow A Safer Campus to access your camera to take photos for incident reports."
+        }
+      ]
+    ]
   }
 }

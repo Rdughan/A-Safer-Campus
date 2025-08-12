@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../src/screens/HomeScreen'
 import SettingsScreen from '../src/screens/SettingsScreen';
@@ -6,9 +6,13 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import NotificationsScreen from '../src/screens/NotificationsScreen';
 import ReportIncidentScreen from '../src/screens/ReportIncidentScreen';
 import RoleBasedDashboard from '../src/screens/RoleBasedDashboard';
+import { useTheme } from '../src/hooks/useTheme';
+
 const Tab = createBottomTabNavigator();
 
 export default function TabNavigator() {
+  const { theme, isDarkMode } = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -22,14 +26,21 @@ export default function TabNavigator() {
           else if (route.name === 'Settings') iconName = 'settings-outline';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#239DD6',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: isDarkMode ? '#888' : '#666',
         headerShown: false,
+        tabBarStyle: {
+          backgroundColor: theme.card,
+          borderTopColor: theme.border,
+          borderTopWidth: 1,
+          height: 90,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
         tabBarLabelStyle: {
-        fontFamily: 'Montserrat-Regular', 
-        fontSize: 11,
-      },
-
+          fontFamily: 'Montserrat-Regular', 
+          fontSize: 11,
+        },
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />

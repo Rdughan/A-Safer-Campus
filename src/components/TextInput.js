@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '../hooks/useTheme';
 
 const InputField = ({
   placeholder = 'Enter text',
@@ -12,8 +13,10 @@ const InputField = ({
   style = {},
   ...rest
 }) => {
+  const { theme } = useTheme();
+  
   return (
-    <View style={[styles.inputContainer, style]}>
+    <View style={[styles.inputContainer, { backgroundColor: theme.card }, style]}>
       <MaterialCommunityIcons
         name={iconName}
         size={24}
@@ -22,8 +25,8 @@ const InputField = ({
       />
       <TextInput
         placeholder={placeholder}
-        placeholderTextColor="#888"
-        style={styles.textInput}
+        placeholderTextColor={theme.text === '#FFFFFF' ? '#888' : '#666'}
+        style={[styles.textInput, { color: theme.text }]}
         value={value}
         onChangeText={onChangeText}
         {...rest}
@@ -38,7 +41,6 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E6E7E8',
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 10,
@@ -51,7 +53,6 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    color: '#000',
     fontSize: 16,
     borderWidth: 0,
     fontFamily: 'Montserrat-Regular',

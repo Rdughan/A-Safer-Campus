@@ -10,11 +10,13 @@ import { roleService } from '../../services/roleService';
 import { notificationService } from '../../services/notificationService';
 import { USER_ROLES, INCIDENT_TYPES } from '../../config/supabase';
 import { AuthContext } from '../../context/AuthContext';
+import { useTheme } from '../../hooks/useTheme';
 
 const { width } = Dimensions.get('window');
 
 export default function RoleBasedDashboard({ navigation }) {
   const { user } = useContext(AuthContext);
+  const { theme, isDarkMode } = useTheme();
   const [userRole, setUserRole] = useState(null);
   const [incidents, setIncidents] = useState([]);
   const [stats, setStats] = useState({});
@@ -284,22 +286,22 @@ export default function RoleBasedDashboard({ navigation }) {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
         <ActivityIndicator size="large" color={getRoleColor(userRole)} />
-        <Text style={styles.loadingText}>Loading your dashboard...</Text>
+        <Text style={[styles.loadingText, { color: theme.text }]}>Loading your dashboard...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <LinearGradient
-        colors={[getRoleColor(userRole), '#fff']}
+        colors={[getRoleColor(userRole), isDarkMode ? theme.card : '#fff']}
         style={styles.header}
       >
         <View style={styles.headerContent}>
-          <Text style={styles.welcomeText}>Welcome back!</Text>
-          <Text style={styles.roleText}>{getRoleDisplayName(userRole)} Dashboard</Text>
+          <Text style={[styles.welcomeText, { color: theme.text }]}>Welcome back!</Text>
+          <Text style={[styles.roleText, { color: theme.text }]}>{getRoleDisplayName(userRole)} Dashboard</Text>
         </View>
         <TouchableOpacity 
           style={styles.notificationButton}
@@ -317,7 +319,7 @@ export default function RoleBasedDashboard({ navigation }) {
       >
         {/* Stats Section */}
         <View style={styles.statsSection}>
-          <Text style={styles.sectionTitle}>Overview</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Overview</Text>
           <View style={styles.statsGrid}>
             {renderStatsCard('Total', stats.total, 'list-outline', getRoleColor(userRole))}
             {renderStatsCard('Reported', stats.reported, 'document-text-outline', '#FF9800')}
@@ -328,7 +330,7 @@ export default function RoleBasedDashboard({ navigation }) {
 
         {/* Filter Section */}
         <View style={styles.filterSection}>
-          <Text style={styles.sectionTitle}>Incidents</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Incidents</Text>
           <View style={styles.filterButtons}>
             {[
               { key: 'all', label: 'All', icon: 'list-outline' },
@@ -339,6 +341,7 @@ export default function RoleBasedDashboard({ navigation }) {
                 key={filter.key}
                 style={[
                   styles.filterButton,
+                  { backgroundColor: theme.card, borderColor: theme.border },
                   selectedFilter === filter.key && { backgroundColor: getRoleColor(userRole) }
                 ]}
                 onPress={() => setSelectedFilter(filter.key)}
@@ -346,10 +349,11 @@ export default function RoleBasedDashboard({ navigation }) {
                 <Ionicons 
                   name={filter.icon} 
                   size={16} 
-                  color={selectedFilter === filter.key ? 'white' : '#666'} 
+                  color={selectedFilter === filter.key ? 'white' : theme.text} 
                 />
                 <Text style={[
                   styles.filterButtonText,
+                  { color: theme.text },
                   selectedFilter === filter.key && { color: 'white' }
                 ]}>
                   {filter.label}
@@ -363,9 +367,9 @@ export default function RoleBasedDashboard({ navigation }) {
         <View style={styles.incidentsSection}>
           {incidents.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="checkmark-circle-outline" size={64} color="#ccc" />
-              <Text style={styles.emptyStateText}>No incidents found</Text>
-              <Text style={styles.emptyStateSubtext}>
+              <Ionicons name="checkmark-circle-outline" size={64} color={theme.border} />
+              <Text style={[styles.emptyStateText, { color: theme.text }]}>No incidents found</Text>
+              <Text style={[styles.emptyStateSubtext, { color: theme.text }]}>
                 {selectedFilter === 'all' ? 'No incidents match your role criteria' :
                  selectedFilter === 'my' ? 'You haven\'t reported any incidents yet' :
                  'No incidents are assigned to you'}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../hooks/useTheme';
 
 const CustomButton = ({
   buttonText,
@@ -15,17 +16,24 @@ const CustomButton = ({
   bottom,
   fontFamily,
 }) => {
+  const { theme } = useTheme();
+  
+  // Use theme colors if not explicitly provided
+  const finalBackgroundColor = backgroundColor === '#007AFF' ? theme.primary : backgroundColor;
+  const finalTextColor = textColor === '#FFFFFF' ? (theme.text === '#FFFFFF' ? '#000000' : '#FFFFFF') : textColor;
+  const finalBorderColor = borderColor || theme.border;
+
   return (
     <TouchableOpacity
       style={[
         styles.buttonContainer,
         {
-          backgroundColor,
+          backgroundColor: finalBackgroundColor,
           borderRadius,
           width,
           height,
           borderWidth,
-          borderColor,
+          borderColor: finalBorderColor,
           bottom,
           fontFamily,
         }
@@ -35,7 +43,7 @@ const CustomButton = ({
       delayPressIn={0}
       hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
     >
-      <Text style={[styles.buttonText, { color: textColor, fontSize }]}>
+      <Text style={[styles.buttonText, { color: finalTextColor, fontSize }]}>
         {buttonText}
       </Text>
     </TouchableOpacity>
@@ -57,6 +65,5 @@ const styles = StyleSheet.create({
   buttonText: {
     
     fontFamily:'Montserrat-Regular',
-    color:'black'
   },
 });

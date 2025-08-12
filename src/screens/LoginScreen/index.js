@@ -3,9 +3,10 @@ import React, {useState} from 'react'
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import InputField from '../../components/TextInput';
 import { useAuth } from '../../context/AuthContext'; 
-
+import { useTheme } from '../../hooks/useTheme';
 
 const LoginScreen = ({navigation}) => {
+  const { theme, isDarkMode } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,14 +34,14 @@ const LoginScreen = ({navigation}) => {
   };
 
   return (
-    <View style ={styles.mainContainer}>
+    <View style={[styles.mainContainer, { backgroundColor: isDarkMode ? theme.background : '#91D8F7' }]}>
       <Image 
                 source={require('./media/abstract.png')} 
                 style={styles.abstractImage}
               />
       <View style ={styles.textContainer}> 
-        <Text style ={styles.helloText}>Hello!</Text>
-        <Text  style ={styles.welcomeText}>Welcome to SaferCampus</Text>
+        <Text style={[styles.helloText, { color: theme.text }]}>Hello!</Text>
+        <Text style={[styles.welcomeText, { color: theme.text }]}>Welcome to SaferCampus</Text>
       </View>
 
       <Image 
@@ -48,8 +49,8 @@ const LoginScreen = ({navigation}) => {
                     style={styles.illustrationImage}
           />
 
-      <View style ={styles.drawerContainer}>
-            <Text style ={styles.loginText}>Login</Text>
+      <View style={[styles.drawerContainer, { backgroundColor: theme.card }]}>
+            <Text style={[styles.loginText, { color: theme.text }]}>Login</Text>
 
               <View style={styles.inputView}>
                 <InputField placeholder="Email" iconName="email-outline" value={email} onChangeText={setEmail} style={styles.inputOverride} 
@@ -59,7 +60,7 @@ const LoginScreen = ({navigation}) => {
                 />
               </View>
 
-              <Text style ={styles.forgotText}> Forgot password?</Text>
+              <Text style={[styles.forgotText, { color: theme.text }]}> Forgot password?</Text>
               <TouchableOpacity 
                       style={[styles.loginContainer, loading && styles.loginContainerDisabled]} 
                       activeOpacity={0.7}
@@ -72,9 +73,9 @@ const LoginScreen = ({navigation}) => {
                     </TouchableOpacity>
 
               <View style={styles.signUpTextContainer}>
-        <Text style={styles.plainText}>Don't have an account? </Text>
+        <Text style={[styles.plainText, { color: theme.text }]}>Don't have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('SignUpScreen')}>
-              <Text style={styles.linkText}>Sign up</Text>  
+              <Text style={[styles.linkText, { color: theme.primary }]}>Sign up</Text>  
             </TouchableOpacity>
         </View>
       </View>
@@ -98,14 +99,14 @@ const styles = StyleSheet.create({
       position:'absolute'
     },
     helloText:{
-      color:'white',
       fontSize:40,
-      fontFamily:'Montserrat-Bold'
+      fontFamily:'Montserrat-Bold',
+      color:'white'
     },
     welcomeText:{
-      color:'white',
       fontFamily:'Montserrat-Bold',
       fontSize:20,
+      color:'white'
     },
     abstractImage:{
       top:-5,
@@ -113,7 +114,6 @@ const styles = StyleSheet.create({
     },
     drawerContainer:{ 
     width:'100%',
-    backgroundColor:'white',
     position:'absolute',
     height:660,
     bottom:0,
@@ -131,7 +131,6 @@ const styles = StyleSheet.create({
      top:'20%'
     },
     loginText:{
-      color:'black',
       fontFamily:'Montserrat-Bold',
       fontSize:40,
       padding:'5%',
@@ -140,10 +139,10 @@ const styles = StyleSheet.create({
       position:'absolute'
     },
     inputOverride:{
-      height:55
+      height:55,
+      backgroundColor:'#D3D3D3',
     },
     forgotText:{
-      color:'#239DD6',
       marginTop:130,
       fontFamily:'Montserrat-Bold',
       marginBottom:30
@@ -178,12 +177,10 @@ const styles = StyleSheet.create({
   },
   plainText: {
     fontSize: 16,
-    color: '#333',
     fontFamily:'Montserrat-Regular'
   },
   linkText: {
     fontSize: 16,
-    color: '#239DD6',
     fontFamily:'Montserrat-Regular'
   },
   loginContainerDisabled: {

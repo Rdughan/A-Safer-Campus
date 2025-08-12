@@ -1,10 +1,10 @@
 import React, { useState, useContext, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Switch,TouchableWithoutFeedback,
-  StyleSheet, Image, ScrollView, Platform, Animated, Alert
+  StyleSheet, Image, ScrollView, Platform, Animated, Alert, Modal
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import * as ImagePicker from 'react-native-image-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -12,6 +12,8 @@ import * as Location from 'expo-location';
 import { incidentService } from '../../services/incidentService';
 import { INCIDENT_TYPES } from '../../config/supabase';
 import { AuthContext } from '../../context/AuthContext';
+import { useTheme } from '../../hooks/useTheme';
+import CustomButton from '../../components/CustomButton';
 
 const INCIDENT_TYPE_OPTIONS = [
   { label: 'Snake Bite', value: INCIDENT_TYPES.SNAKE_BITE },
@@ -27,6 +29,7 @@ const INCIDENT_TYPE_OPTIONS = [
 
 export default function ReportIncidentScreen({ navigation }) {
   const { user } = useContext(AuthContext);
+  const { theme, isDarkMode } = useTheme();
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [sendToAuthorities, setSendToAuthorities] = useState(true);
   const [incidentType, setIncidentType] = useState('');
@@ -36,6 +39,8 @@ export default function ReportIncidentScreen({ navigation }) {
   const [media, setMedia] = useState(null);
   const [showSubmitAnimation] = useState(new Animated.Value(1));
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showMediaOptions, setShowMediaOptions] = useState(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -100,7 +105,7 @@ export default function ReportIncidentScreen({ navigation }) {
       console.error('Error getting location:', error);
       Alert.alert(
         'Location Error',
-        'Could not get your current location. Please enter the location manually.',
+        'Unable to get your current location. Please enter the location manually.',
         [{ text: 'OK' }]
       );
     } finally {
@@ -108,8 +113,7 @@ export default function ReportIncidentScreen({ navigation }) {
     }
   };
 
- const handleTimeChange = (event, selectedTime) => {
-    
+  const handleTimeChange = (event, selectedTime) => {
     if (Platform.OS === 'android') {
       setShowTimePicker(false);
     }
@@ -132,232 +136,339 @@ export default function ReportIncidentScreen({ navigation }) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const pickMedia = () => {
-    ImagePicker.launchImageLibrary(
-      { mediaType: 'mixed' },
-      (response) => {
-        if (response.assets && response.assets.length > 0) {
-          setMedia(response.assets[0]);
-        }
+  // Request camera permission
+  const requestCameraPermission = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    return status === 'granted';
+  };
+
+  // Request media library permission
+  const requestMediaLibraryPermission = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    return status === 'granted';
+  };
+
+  const openCamera = async () => {
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) {
+      Alert.alert('Permission Denied', 'Camera permission is required to take photos.');
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      console.log('Camera result:', result);
+      
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setMedia({
+          uri: result.assets[0].uri,
+          type: result.assets[0].type,
+          fileName: result.assets[0].fileName,
+        });
+        setShowMediaOptions(false);
       }
+    } catch (error) {
+      console.error('Camera error:', error);
+      Alert.alert('Error', 'Failed to open camera. Please try again.');
+    }
+  };
+
+  const openGallery = async () => {
+    const hasPermission = await requestMediaLibraryPermission();
+    if (!hasPermission) {
+      Alert.alert('Permission Denied', 'Media library permission is required to access photos.');
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+        allowsMultipleSelection: false,
+      });
+
+      console.log('Gallery result:', result);
+      
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setMedia({
+          uri: result.assets[0].uri,
+          type: result.assets[0].type,
+          fileName: result.assets[0].fileName,
+        });
+        setShowMediaOptions(false);
+      }
+    } catch (error) {
+      console.error('Gallery error:', error);
+      Alert.alert('Error', 'Failed to open gallery. Please try again.');
+    }
+  };
+
+  const showMediaOptionsModal = () => {
+    console.log('Opening media options modal');
+    setShowMediaOptions(true);
+  };
+
+  const removeMedia = () => {
+    Alert.alert(
+      'Remove Media',
+      'Are you sure you want to remove this photo/video?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Remove', style: 'destructive', onPress: () => setMedia(null) }
+      ]
     );
   };
 
-  const handleSubmit = async () => {
-    if (!incidentType) {
-      Alert.alert('Error', 'Please select an incident type');
-      return;
-    }
+  const handleSubmit = () => {
+    Animated.sequence([
+      Animated.timing(showSubmitAnimation, {
+        toValue: 0.8,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(showSubmitAnimation, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
-    if (!description && incidentType !== INCIDENT_TYPES.OTHER) {
-      Alert.alert('Error', 'Please provide a description of the incident');
-      return;
-    }
+    const timeString = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    if (!location) {
-      Alert.alert('Error', 'Please provide the location of the incident');
-      return;
-    }
+    const data = {
+      isAnonymous,
+      sendToAuthorities,
+      incidentType,
+      description,
+      time: timeString,
+      location,
+      media
+    };
 
-    setSubmitting(true);
+    console.log("Submitted data: ", data);
+    setShowConfirmationModal(true);
+  };
 
-    try {
-      Animated.sequence([
-        Animated.timing(showSubmitAnimation, {
-          toValue: 0.8,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(showSubmitAnimation, {
-          toValue: 1,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-      ]).start();
+  const handleConfirmSubmit = () => {
+    setShowConfirmationModal(false);
+    // Here you can add any additional logic after confirmation
+    // For example, navigate to a success screen or show a success message
+  };
 
-      const incidentData = {
-        user_id: user?.id,
-        title: `${incidentType.replace('_', ' ').toUpperCase()} - ${location}`,
-        description: description || `Incident reported at ${location}`,
-        incident_type: incidentType,
-        location_description: location,
-        latitude: currentLocation?.latitude || 5.6064, // Fallback to campus coordinates
-        longitude: currentLocation?.longitude || -0.2000, // Fallback to campus coordinates
-        reported_at: time.toISOString(),
-        evidence_files: media ? [media.uri] : [],
-        witnesses: [],
-        status: 'reported'
-      };
-
-      console.log('Submitting incident data:', incidentData);
-
-      const result = await incidentService.createIncident(incidentData);
-
-      console.log('Incident creation result:', result);
-
-      if (result.error) {
-        console.error('Incident creation error:', result.error);
-        Alert.alert('Error', 'Failed to submit incident report. Please try again.');
-        return;
-      }
-
-      console.log('Incident created successfully:', result.data);
-
-      Alert.alert(
-        'Success', 
-        'Incident report submitted successfully! The appropriate authorities have been notified.',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('Home')
-          }
-        ]
-      );
-
-    } catch (error) {
-      console.error('Error submitting incident:', error);
-      Alert.alert('Error', 'Failed to submit incident report. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
+  const handleCancelSubmit = () => {
+    setShowConfirmationModal(false);
   };
 
   return (
-    <View style={styles.mainContainer}>
-      <View intensity={100} tint="light" style={styles.headerContainer}>
-          
-        <Text style={styles.headerTitle}>Report Incident</Text>
+    <View style={[styles.mainContainer, { backgroundColor: theme.background }]}> 
+      <View style={[styles.headerContainer, { backgroundColor: isDarkMode ? '#239DD6' : '#ADD8E6' }]}> 
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Report Incident</Text>
       </View>
-      
+      <ScrollView style={[styles.scrollContainer, { backgroundColor: theme.background }]}> 
+        <View style={styles.toggleRow}>
+          <Text style={[styles.label, { color: theme.text }]}>Report Anonymously</Text>
+          <Switch value={isAnonymous} onValueChange={setIsAnonymous} />
+        </View>
 
-    <ScrollView style={styles.scrollContainer}> 
-      <View style={styles.toggleRow}>
-        <Text style={styles.label}>Report Anonymously</Text>
-        <Switch value={isAnonymous} onValueChange={setIsAnonymous} />
-      </View>
+        <View style={styles.mediaContainer}>
+          <Text style={[styles.label, { color: theme.text }]}>Add Photo/Video Evidence</Text>
+          <TouchableOpacity style={[styles.mediaBox, { backgroundColor: isDarkMode ? theme.card : '#E0F2FE', borderColor: isDarkMode ? theme.border : '#E0F2FE' }]} onPress={showMediaOptionsModal}>
+            {media ? (
+              <View style={styles.mediaPreviewContainer}>
+                <Image source={{ uri: media.uri }} style={styles.mediaPreview} />
+                <TouchableOpacity style={[styles.removeButton, { backgroundColor: theme.background }]} onPress={removeMedia}>
+                  <Ionicons name="close-circle" size={24} color="#ff4444" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.mediaPlaceholder}>
+                <Ionicons name="camera-outline" size={40} color={theme.primary} />
+                <Text style={[styles.mediaText, { color: theme.text }]}>Tap to add photo/video</Text>
+                <Text style={[styles.mediaSubtext, { color: theme.primary }]}>Take a photo or choose from gallery</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
 
-      <TouchableOpacity style={styles.mediaBox} onPress={pickMedia}>
-        {media ? (
-          <Image source={{ uri: media.uri }} style={styles.mediaPreview} />
-        ) : (
-          <Text style={styles.mediaText}><Ionicons name="camera-outline" size={20} /> Add Picture/Video</Text>
-        )}
-      </TouchableOpacity>
-
-      
-        <Text style={styles.label }>Time of Incident</Text>
+        <Text style={[styles.label, { color: theme.text }]}>Time of Incident</Text>
         <TouchableOpacity 
-          style={styles.timePickerButton}
+          style={[styles.timePickerButton, { borderColor: theme.border }]}
           onPress={() => setShowTimePicker(true)}
         >
-        
-          <Text style={styles.timePickerText}>
+          <Text style={[styles.timePickerText, { color: theme.text }]}>
             {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </Text>
-          <Ionicons name="time-outline" size={20} color="#70C8E6" />
+          <Ionicons name="time-outline" size={20} color={isDarkMode ? '#239DD6' : theme.primary} />
         </TouchableOpacity>
 
-       {showTimePicker && (
-  <View style={styles.timePickerContainer}>
-    <DateTimePicker
-      value={time}
-      mode="time"
-      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-      onChange={handleTimeChange}
-      themeVariant="light"
-      accentColor="#70C8E6"
-    />
-    {Platform.OS === 'ios' && (
-      <TouchableOpacity 
-        style={styles.doneButton}
-        onPress={() => setShowTimePicker(false)}
-      >
-        <Text style={styles.doneButtonText}>Done</Text>
-      </TouchableOpacity>
-    )}
-  </View>
-)}
-      <TextInput
-        style={styles.input}
-        placeholder="Location on Campus"
-        value={location}
-        onChangeText={setLocation}
-      />
-
-      {/* Location Status */}
-      <View style={styles.locationStatus}>
-        {locationLoading ? (
-          <Text style={styles.locationStatusText}>
-            <Ionicons name="location-outline" size={16} color="#666" /> Getting your location...
-          </Text>
-        ) : currentLocation ? (
-          <Text style={styles.locationStatusText}>
-            <Ionicons name="checkmark-circle" size={16} color="#4CAF50" /> Location captured
-          </Text>
-        ) : (
-          <View>
-            <Text style={styles.locationStatusText}>
-              <Ionicons name="warning" size={16} color="#FF9800" /> Using campus coordinates
-            </Text>
-            <TouchableOpacity onPress={getCurrentLocation} style={styles.locationButton}>
-              <Text style={styles.locationButtonText}>
-                <Ionicons name="location-outline" size={16} /> Get Current Location
-              </Text>
-            </TouchableOpacity>
+        {showTimePicker && (
+          <View style={styles.timePickerContainer}>
+            <DateTimePicker
+              value={time}
+              mode="time"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleTimeChange}
+              themeVariant={isDarkMode ? 'dark' : 'light'}
+              accentColor={isDarkMode ? "#239DD6" : "#239DD6"}
+              textColor={isDarkMode ? "#FFFFFF" : "#000000"}
+            />
+            {Platform.OS === 'ios' && (
+              <TouchableOpacity 
+                style={styles.doneButton}
+                onPress={() => setShowTimePicker(false)}
+              >
+                <Text style={styles.doneButtonText}>Done</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
-      </View>
 
-      <Text style={styles.label}>Select Incident Type</Text>
-      <View style={styles.typesContainer}>
-        {INCIDENT_TYPE_OPTIONS.map((type) => (
-          <TouchableOpacity
-            key={type.value}
-            style={[
-              styles.typeButton,
-              incidentType === type.value && styles.typeButtonSelected
-            ]}
-            onPress={() => setIncidentType(type.value)}
-          >
-            <Text
+        <TextInput
+          style={[
+            styles.input,
+            { backgroundColor: theme.card, borderColor: theme.border },
+            isDarkMode && { color: '#fff' }
+          ]}
+          placeholder="Location on Campus"
+          value={location}
+          onChangeText={setLocation}
+          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
+        />
+
+        {locationLoading ? (
+          <Text style={[styles.locationStatusText, { color: isDarkMode ? '#FFFFFF' : '#333' }]}>
+            <Ionicons name="location-outline" size={16} color={isDarkMode ? '#239DD6' : '#666'} /> Getting your location...
+          </Text>
+        ) : currentLocation ? (
+          <Text style={[styles.locationStatusText, { color: isDarkMode ? '#FFFFFF' : '#333' }]}>
+            <Ionicons name="checkmark-circle" size={16} color="#4CAF50" /> Location captured automatically
+          </Text>
+        ) : null}
+
+        <Text style={[styles.label, { color: theme.text }]}>Select Incident Type</Text>
+        <View style={styles.typesContainer}>
+          {INCIDENT_TYPE_OPTIONS.map((option) => (
+            <TouchableOpacity
+              key={option.value}
               style={[
-                styles.typeText,
-                incidentType === type.value && styles.typeTextSelected
+                styles.typeButton,
+                { backgroundColor: isDarkMode ? theme.card : '#E2E8F0', borderColor: isDarkMode ? theme.border : '#E2E8F0' },
+                incidentType === option.value && { backgroundColor: '#239DD6', borderColor: '#239DD6' }
               ]}
+              onPress={() => setIncidentType(option.value)}
             >
-              {type.label}
+              <Text
+                style={[
+                  styles.typeText,
+                  (isDarkMode || incidentType === option.value) && { color: '#fff', fontWeight: 'bold' }
+                ]}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {incidentType === INCIDENT_TYPES.OTHER && (
+          <TextInput
+            style={[
+              styles.input,
+              { backgroundColor: theme.card, borderColor: theme.border },
+              isDarkMode && { color: '#fff' }
+            ]}
+            placeholder="Describe the incident"
+            multiline
+            numberOfLines={4}
+            value={description}
+            onChangeText={setDescription}
+            placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
+          />
+        )}
+
+        <View style={styles.toggleRow}>
+          <Text style={[styles.label, { color: theme.text }]}>Send to Authorities</Text>
+          <Switch value={sendToAuthorities} onValueChange={setSendToAuthorities} />
+        </View>
+
+        <Animated.View style={{ transform: [{ scale: showSubmitAnimation }] }}>
+          <TouchableOpacity style={[styles.submitButton, { backgroundColor: isDarkMode ? '#239DD6' : theme.primary }]} onPress={handleSubmit}>
+            <Text style={[styles.submitText, { color: isDarkMode ? theme.text : '#fff' }]}>
+              <Ionicons name="send-outline" size={18} /> Submit Report
             </Text>
           </TouchableOpacity>
-        ))}
-      </View>
+        </Animated.View>
+      </ScrollView>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Describe the incident in detail"
-        multiline
-        numberOfLines={4}
-        value={description}
-        onChangeText={setDescription}
-      />
+      {/* Media Options Modal */}
+      <Modal
+        visible={showMediaOptions}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowMediaOptions(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setShowMediaOptions(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+                <Text style={[styles.modalTitle, { color: theme.text }]}>Add Photo/Video</Text>
+                
+                <TouchableOpacity style={[styles.modalOption, { borderBottomColor: theme.border }]} onPress={() => {
+                  console.log('Take photo pressed');
+                  openCamera();
+                }}>
+                  <Ionicons name="camera" size={24} color={theme.primary} />
+                  <Text style={[styles.modalOptionText, { color: theme.text }]}>Take Photo</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={[styles.modalOption, { borderBottomColor: theme.border }]} onPress={() => {
+                  console.log('Choose from gallery pressed');
+                  openGallery();
+                }}>
+                  <Ionicons name="images" size={24} color={theme.primary} />
+                  <Text style={[styles.modalOptionText, { color: theme.text }]}>Choose from Gallery</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.modalCancelButton, { backgroundColor: theme.card }]} 
+                  onPress={() => setShowMediaOptions(false)}
+                >
+                  <Text style={[styles.modalCancelText, { color: theme.text }]}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
 
-      <View style={styles.toggleRow}>
-        <Text style={styles.label}>Send to Authorities</Text>
-        <Switch value={sendToAuthorities} onValueChange={setSendToAuthorities} />
-      </View>
-
-      <Animated.View style={{ transform: [{ scale: showSubmitAnimation }] }}>
-        <TouchableOpacity 
-          style={[styles.submitButton, submitting && styles.submitButtonDisabled]} 
-          onPress={handleSubmit}
-          disabled={submitting}
-        >
-          <Text style={styles.submitText}>
-            <Ionicons name="send-outline" size={18} /> 
-            {submitting ? ' Submitting...' : ' Submit Report'}
-          </Text>
-        </TouchableOpacity>
-      </Animated.View>
-    </ScrollView>
+      {/* Confirmation Modal */}
+      <Modal transparent visible={showConfirmationModal} animationType="fade" onRequestClose={handleCancelSubmit}>
+        <View style={[styles.confirmationContainer, { backgroundColor: theme.background, opacity: 0.9 }]}>
+          <View style={[styles.confirmationMainContainer, { backgroundColor: theme.background }]}>
+            <Ionicons name="checkmark-circle" size={120} color={theme.primary} style={styles.confirmationIcon} />
+            <Text style={[styles.confirmationQuestion, { color: theme.text }]}>Incident Report Submitted!</Text>
+            <Text style={[styles.confirmationSubQuestion, { color: theme.text }]}>
+              Your incident report has been successfully submitted. Thank you for helping keep our campus safe.
+            </Text>
+            
+            <CustomButton
+              buttonText="OK"
+              backgroundColor={theme.primary} 
+              borderWidth={1}
+              borderColor={theme.primary}
+              onPress={handleConfirmSubmit}
+            />
+           
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -365,7 +476,6 @@ export default function ReportIncidentScreen({ navigation }) {
 const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
-    backgroundColor: 'white',
     padding: 20,
     marginTop: 150,
     paddingBottom:40
@@ -374,12 +484,10 @@ const styles = StyleSheet.create({
    mainContainer: {
     flex: 1,
     width: '100%',
-    backgroundColor:'white',
     
   },
    
   headerContainer: {
-    backgroundColor: '#Add8e6',
     height: '15%',
      position: 'absolute',
      zIndex: 100,
@@ -414,17 +522,14 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    color: '#333',
     fontFamily:'Montserrat-Bold',
     marginTop:10
   },
   input: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 14,
     marginVertical: 10,
     fontSize: 15,
-    borderColor: '#E5E7EB',
     borderWidth: 1,
     fontFamily:'Montserrat-Regular',
   },
@@ -434,6 +539,9 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
     marginVertical: 10,
+    borderWidth: 2,
+    borderColor: '#E0F2FE',
+    borderStyle: 'dashed',
   },
   mediaText: {
     color: '#0C4A6E',
@@ -506,6 +614,13 @@ const styles = StyleSheet.create({
   timePickerContainer: {
   position: 'relative',
   marginBottom: 20,
+  borderRadius: 12,
+  padding: 10,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 3,
+  elevation: 3,
 },
 doneButton: {
   position: 'absolute',
@@ -549,6 +664,116 @@ doneButtonText: {
     color: 'white',
     fontSize: 15,
     fontFamily: 'Montserrat-Bold',
+  },
+  mediaContainer: {
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  mediaPreviewContainer: {
+    position: 'relative',
+    width: 100,
+    height: 100,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  mediaPreview: {
+    width: '100%',
+    height: '100%',
+  },
+  removeButton: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 15,
+    padding: 5,
+  },
+  mediaPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  mediaText: {
+    fontSize: 16,
+    color: '#333',
+    marginTop: 10,
+  },
+  mediaSubtext: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '80%',
+    borderRadius: 15,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontFamily: 'Montserrat-Bold',
+    marginBottom: 20,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    width: '100%',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalOptionText: {
+    fontSize: 18,
+    fontFamily: 'Montserrat-Regular',
+    marginLeft: 15,
+  },
+  modalCancelButton: {
+    marginTop: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 12,
+  },
+  modalCancelText: {
+    fontSize: 18,
+    fontFamily: 'Montserrat-Bold',
+  },
+  confirmationContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  confirmationMainContainer: {
+    width: '80%',
+    borderRadius: 20,
+    padding: 30,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  confirmationIcon: {
+    marginBottom: 20,
+  },
+  confirmationQuestion: {
+    fontSize: 24,
+    fontFamily: 'Montserrat-Bold',
+    marginBottom: 10,
+  },
+  confirmationSubQuestion: {
+    fontSize: 16,
+    fontFamily: 'Montserrat-Regular',
+    textAlign: 'center',
+    marginBottom: 30,
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -9,10 +9,14 @@ import {
   Alert,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { ThemeContext } from '../../context/ThemeContext';
+import { lightTheme, darkTheme } from '../../styles/themes';
 
 const ReportBugScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [bugDescription, setBugDescription] = useState('');
+  const { isDarkMode } = useContext(ThemeContext);
+  const colors = isDarkMode ? darkTheme : lightTheme;
 
   const handleSubmit = () => {
     if (!email.trim() || !bugDescription.trim()) {
@@ -25,32 +29,34 @@ const ReportBugScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.mainContainer}>
+    <View style={[styles.mainContainer, { backgroundColor: colors.background }]}>
       
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { backgroundColor: isDarkMode ? '#239DD6' : '#ADD8E6' }]}>
         <View style={{flexDirection:'row', gap:10, position:'absolute', bottom:20, alignItems:'center',gap:15,padding:15 }}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={25} color="black" style={styles.backArrow} />
+          <Ionicons name="arrow-back" size={25} color={colors.text} style={styles.backArrow} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Report a bug</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Report a bug</Text>
       </View>
        </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.label}>Your Email</Text>
+        <Text style={[styles.label, { color: colors.text }]}>Your Email</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
           placeholder="you@example.com"
+          placeholderTextColor={isDarkMode ? '#aaa' : '#888'}
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
           onChangeText={setEmail}
         />
 
-        <Text style={styles.label}>Bug Description</Text>
+        <Text style={[styles.label, { color: colors.text }]}>Bug Description</Text>
         <TextInput
-          style={[styles.input, styles.multilineInput]}
+          style={[styles.input, styles.multilineInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
           placeholder="Describe the bug you encountered..."
+          placeholderTextColor={isDarkMode ? '#aaa' : '#888'}
           multiline
           numberOfLines={6}
           value={bugDescription}
@@ -58,8 +64,8 @@ const ReportBugScreen = ({ navigation }) => {
           textAlignVertical="top"
         />
 
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Submit Bug Report</Text>
+        <TouchableOpacity style={[styles.submitButton, { backgroundColor: isDarkMode ? colors.primary : '#ADD8E6' }]} onPress={handleSubmit}>
+          <Text style={[styles.submitButtonText, { color: colors.text }]}>Submit Bug Report</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -70,12 +76,10 @@ const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     width: '100%',
-    backgroundColor: '#fff',
     flexDirection:'column',
    
   },
   headerContainer: {
-    backgroundColor: '#ADD8E6',
     height: '15%',
     marginBottom:20,
      shadowColor: '#000',
@@ -91,7 +95,6 @@ const styles = StyleSheet.create({
   },
   backArrow: {
     fontSize: 25,
-    color: 'black',
   },
   headerTitle: {
     fontSize: 30,
@@ -106,33 +109,28 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontFamily: 'Montserrat-SemiBold',
-    color: '#000',
     marginBottom: 6,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
     borderRadius: 8,
     paddingHorizontal: 15,
     paddingVertical: 10,
     fontSize: 16,
     fontFamily: 'Montserrat-Regular',
     marginBottom: 20,
-    color: '#000',
   },
   multilineInput: {
     height: 120,
     marginBottom:40
   },
   submitButton: {
-    backgroundColor: 'black', 
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: 'center',
     marginTop:30
   },
   submitButtonText: {
-    color: '#fff',
     fontSize: 18,
     fontFamily: 'Montserrat-Bold',
   },

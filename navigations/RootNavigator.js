@@ -14,12 +14,12 @@ import ReportBugScreen from '../src/screens/ReportBug';
 import SafetyMapScreen from '../src/screens/SafetyMapScreen';
 import RoleBasedDashboard from '../src/screens/RoleBasedDashboard';
 import IncidentDetailScreen from '../src/screens/IncidentDetailScreen';
-
-
+import { useTheme } from '../src/hooks/useTheme';
 
 const Stack = createNativeStackNavigator();
 
 export default function RootNavigator() {
+  const { theme, isDarkMode } = useTheme();
   const [isSplashVisible, setIsSplashVisible] = useState(true);
 
   useEffect(() => {
@@ -30,7 +30,14 @@ export default function RootNavigator() {
   }, []);
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator 
+      screenOptions={{ 
+        headerShown: false,
+        contentStyle: {
+          backgroundColor: theme.background,
+        },
+      }}
+    >
       {isSplashVisible ? (
         <Stack.Screen name="Splash" component={SplashScreen} />
       ) : (
