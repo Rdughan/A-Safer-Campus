@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     flex:1,
     width:'100%',
     alignItems:'center',
-    top:-200,
+    top:-260,
    
     },
      logo:{
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
       width:'110%',
       height:'110%',
       position:'absolute',
-      top:-85
+      
     },
     infoContainer:{
       width:'100%',

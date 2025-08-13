@@ -20,8 +20,8 @@ const SafetyHeatmap = forwardRef(({
   const [loading, setLoading] = useState(true);
   const [region, setRegion] = useState(
     initialRegion || {
-      latitude: 6.6720, // Default to KNUST coordinates
-      longitude: -1.5723,
+      latitude: 6.6735, // Default to KNUST College of Science coordinates
+      longitude: -1.5718,
       latitudeDelta: 0.01,
       longitudeDelta: 0.01,
     }

@@ -80,7 +80,8 @@ const styles = StyleSheet.create({
     flex:1,
     width:'100%',
     alignItems:'center',
-    top:-200,
+    top:-220,
+    
    
     },
 
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
       width:'100%',
       height:'100%',
       position:'absolute',
-      bottom:40, 
+     
     },
     infoContainer:{
       width:'100%',

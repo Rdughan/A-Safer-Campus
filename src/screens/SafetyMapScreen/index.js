@@ -32,8 +32,8 @@ const GHANA_CAMPUSES = [
 
 // Default location (KNUST College of Science)
 const DEFAULT_LOCATION = {
-  latitude: 6.6720,
-  longitude: -1.5723,
+  latitude: 6.6735,
+  longitude: -1.5718,
   latitudeDelta: 0.01,
   longitudeDelta: 0.01,
 };
@@ -102,12 +102,29 @@ const SafetyMapScreen = ({ navigation }) => {
       
     } catch (error) {
       console.error('Error getting location:', error);
-      Alert.alert(
-        'Location Error',
-        'Unable to get your current location. Using default location (KNUST).',
-        [{ text: 'OK' }]
-      );
-      setUserLocation(DEFAULT_LOCATION);
+      
+      // In development/simulator, provide mock location
+      if (__DEV__ && Platform.OS === 'ios') {
+        console.log('Using mock location for iOS Simulator');
+        const mockLocation = {
+          latitude: 6.6735, // KNUST College of Science coordinates
+          longitude: -1.5718,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        };
+        
+        setUserLocation(mockLocation);
+        if (heatmapRef.current) {
+          heatmapRef.current.updateRegion(mockLocation);
+        }
+      } else {
+        Alert.alert(
+          'Location Error',
+          'Unable to get your current location. Using default location (KNUST).',
+          [{ text: 'OK' }]
+        );
+        setUserLocation(DEFAULT_LOCATION);
+      }
     } finally {
       setLocationLoading(false);
     }

@@ -7,6 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import CampusAlertModal from '../../components/CampusAlertModal';
 import { ThemeContext } from '../../context/ThemeContext';
 import { lightTheme, darkTheme } from '../../styles/themes';
+import Constants from 'expo-constants';
 
 const HomeScreen = ({ route }) => {
     const { isDarkMode } = useContext(ThemeContext);
@@ -136,7 +137,21 @@ const HomeScreen = ({ route }) => {
             setErrorMsg(null);
         } catch (error) {
             console.error('Error getting location:', error);
-            setErrorMsg('Error getting your location. Please check your location settings.');
+            
+            // Fallback to Mac's location using a default or mock location
+            const fallbackLocation = {
+                latitude: 6.6720, // KNUST College of Science coordinates
+                longitude: -1.5713,
+            };
+            
+            setMarkerCoords(fallbackLocation);
+            setMapRegion({
+                ...fallbackLocation,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01
+            });
+            
+            setErrorMsg('Using fallback location (KNUST)');
         } finally {
             setIsLoadingLocation(false);
         }
@@ -468,7 +483,19 @@ const darkMapStyle = [
             {/* Location refresh button */}
             <TouchableOpacity
                 style={styles.refreshButton}
-                onPress={getCurrentLocation}
+                onPress={() => {
+                    const knustLocation = {
+                        latitude: 6.6720, // KNUST College of Science coordinates
+                        longitude: -1.5713,
+                    };
+                    setMarkerCoords(knustLocation);
+                    setMapRegion({
+                        ...knustLocation,
+                        latitudeDelta: 0.01,
+                        longitudeDelta: 0.01,
+                    });
+                    setErrorMsg(null); // Clear any previous error messages
+                }}
                 disabled={isLoadingLocation}
             >
                 <Icon 

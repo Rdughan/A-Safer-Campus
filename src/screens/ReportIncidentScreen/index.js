@@ -103,11 +103,24 @@ export default function ReportIncidentScreen({ navigation }) {
 
     } catch (error) {
       console.error('Error getting location:', error);
-      Alert.alert(
-        'Location Error',
-        'Unable to get your current location. Please enter the location manually.',
-        [{ text: 'OK' }]
-      );
+      
+      // In development/simulator, provide mock location
+      if (__DEV__ && Platform.OS === 'ios') {
+        console.log('Using mock location for iOS Simulator');
+        const mockLocation = {
+          latitude: 6.6735, // KNUST College of Science coordinates
+          longitude: -1.5718,
+        };
+        
+        setCurrentLocation(mockLocation);
+        setLocation('KNUST College of Science, Kumasi (Simulated)');
+      } else {
+        Alert.alert(
+          'Location Error',
+          'Unable to get your current location. Please enter the location manually.',
+          [{ text: 'OK' }]
+        );
+      }
     } finally {
       setLocationLoading(false);
     }
