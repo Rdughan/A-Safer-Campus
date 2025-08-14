@@ -12,6 +12,7 @@ import * as Location from 'expo-location';
 import { incidentService } from '../../services/incidentService';
 import { INCIDENT_TYPES } from '../../config/supabase';
 import { AuthContext } from '../../context/AuthContext';
+import { debugUtils } from '../../utils/debugUtils';
 
 const INCIDENT_TYPE_OPTIONS = [
   { label: 'Snake Bite', value: INCIDENT_TYPES.SNAKE_BITE },
@@ -108,6 +109,40 @@ export default function ReportIncidentScreen({ navigation }) {
     }
   };
 
+  // Debug function to help troubleshoot issues
+  const runDebugDiagnostics = async () => {
+    try {
+      console.log('🔍 [ReportIncidentScreen] Running debug diagnostics...');
+      const results = await debugUtils.runDiagnostics();
+      
+      let debugMessage = 'Debug Results:\n\n';
+      
+      if (results.auth.error) {
+        debugMessage += `❌ Auth Error: ${results.auth.error.message}\n`;
+      } else if (results.auth.user) {
+        debugMessage += `✅ User ID: ${results.auth.user.id}\n`;
+      } else {
+        debugMessage += `❌ No authenticated user\n`;
+      }
+      
+      if (results.userInTable?.error) {
+        debugMessage += `❌ User Table Error: ${results.userInTable.error.message}\n`;
+      } else if (results.userInTable?.data) {
+        debugMessage += `✅ User in table: ${results.userInTable.data.role}\n`;
+      }
+      
+      if (results.incidentAccess?.insert?.error) {
+        debugMessage += `❌ Insert Error: ${results.incidentAccess.insert.error.message}\n`;
+        debugMessage += `   Code: ${results.incidentAccess.insert.error.code}\n`;
+      }
+      
+      Alert.alert('Debug Results', debugMessage, [{ text: 'OK' }]);
+    } catch (error) {
+      console.error('❌ [ReportIncidentScreen] Debug failed:', error);
+      Alert.alert('Debug Error', 'Failed to run diagnostics');
+    }
+  };
+
  const handleTimeChange = (event, selectedTime) => {
     
     if (Platform.OS === 'android') {
@@ -159,6 +194,18 @@ export default function ReportIncidentScreen({ navigation }) {
       return;
     }
 
+    // Validate user authentication
+    if (!user || !user.id) {
+      console.error('❌ [ReportIncidentScreen] User not authenticated:', user);
+      Alert.alert('Authentication Error', 'Please log in again to report an incident');
+      return;
+    }
+
+    console.log('🔍 [ReportIncidentScreen] Starting incident submission...');
+    console.log('👤 [ReportIncidentScreen] User:', user);
+    console.log('📍 [ReportIncidentScreen] Location:', location);
+    console.log('🕒 [ReportIncidentScreen] Time:', time);
+
     setSubmitting(true);
 
     try {
@@ -176,7 +223,7 @@ export default function ReportIncidentScreen({ navigation }) {
       ]).start();
 
       const incidentData = {
-        user_id: user?.id,
+        user_id: user.id,
         title: `${incidentType.replace('_', ' ').toUpperCase()} - ${location}`,
         description: description || `Incident reported at ${location}`,
         incident_type: incidentType,
@@ -189,19 +236,43 @@ export default function ReportIncidentScreen({ navigation }) {
         status: 'reported'
       };
 
-      console.log('Submitting incident data:', incidentData);
+      console.log('📊 [ReportIncidentScreen] Submitting incident data:', incidentData);
 
       const result = await incidentService.createIncident(incidentData);
 
-      console.log('Incident creation result:', result);
+      console.log('📤 [ReportIncidentScreen] Incident creation result:', result);
 
       if (result.error) {
-        console.error('Incident creation error:', result.error);
-        Alert.alert('Error', 'Failed to submit incident report. Please try again.');
+        console.error('❌ [ReportIncidentScreen] Incident creation error:', result.error);
+        
+        // Provide more specific error messages
+        let errorMessage = 'Failed to submit incident report. Please try again.';
+        
+        if (result.error.message) {
+          if (result.error.message.includes('User not authenticated')) {
+            errorMessage = 'Please log in again to report an incident';
+          } else if (result.error.message.includes('User ID is required')) {
+            errorMessage = 'User authentication error. Please try logging in again.';
+          } else if (result.error.message.includes('Incident type is required')) {
+            errorMessage = 'Please select an incident type';
+          } else if (result.error.code === '23505') {
+            errorMessage = 'This incident has already been reported';
+          } else if (result.error.code === '23503') {
+            errorMessage = 'Database constraint error. Please check your input.';
+          } else if (result.error.code === '42501') {
+            errorMessage = 'Permission denied. You may not have access to create incidents.';
+          } else if (result.error.code === '42P01') {
+            errorMessage = 'Database table not found. Please contact support.';
+          } else {
+            errorMessage = `Error: ${result.error.message}`;
+          }
+        }
+        
+        Alert.alert('Error', errorMessage);
         return;
       }
 
-      console.log('Incident created successfully:', result.data);
+      console.log('✅ [ReportIncidentScreen] Incident created successfully:', result.data);
 
       Alert.alert(
         'Success', 
@@ -215,8 +286,21 @@ export default function ReportIncidentScreen({ navigation }) {
       );
 
     } catch (error) {
-      console.error('Error submitting incident:', error);
-      Alert.alert('Error', 'Failed to submit incident report. Please try again.');
+      console.error('💥 [ReportIncidentScreen] Unexpected error submitting incident:', error);
+      
+      let errorMessage = 'Failed to submit incident report. Please try again.';
+      
+      if (error.message) {
+        if (error.message.includes('Network')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'Request timed out. Please try again.';
+        } else {
+          errorMessage = `Error: ${error.message}`;
+        }
+      }
+      
+      Alert.alert('Error', errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -367,7 +451,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'white',
     padding: 20,
-    marginTop: 150,
+    marginTop: 100,
     paddingBottom:40
     
   },
@@ -476,15 +560,18 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 16,
     marginTop: 20,
+    marginBottom: 50,
     alignItems: 'center',
   },
   submitButtonDisabled: {
     backgroundColor: '#ccc',
+    marginBottom: 100,
   },
   submitText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  
     fontFamily:'Montserrat-Bold',
   },
     timePickerButton: {
@@ -547,6 +634,21 @@ doneButtonText: {
   },
   locationButtonText: {
     color: 'white',
+    fontSize: 15,
+    fontFamily: 'Montserrat-Bold',
+  },
+  debugButton: {
+    backgroundColor: '#FFD700', // Gold color for debug
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginTop: 15,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFC107',
+  },
+  debugButtonText: {
+    color: '#333',
     fontSize: 15,
     fontFamily: 'Montserrat-Bold',
   },

@@ -6,14 +6,68 @@ export const incidentService = {
   // Create a new incident report
   async createIncident(incidentData) {
     try {
+      console.log('🔍 [incidentService] Starting incident creation...');
+      console.log('📊 [incidentService] Incident data:', JSON.stringify(incidentData, null, 2));
+      
+      // Validate required fields
+      if (!incidentData.user_id) {
+        console.error('❌ [incidentService] Missing user_id in incident data');
+        return { data: null, error: { message: 'User ID is required' } };
+      }
+
+      if (!incidentData.incident_type) {
+        console.error('❌ [incidentService] Missing incident_type in incident data');
+        return { data: null, error: { message: 'Incident type is required' } };
+      }
+
+      // Ensure the user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        console.error('❌ [incidentService] Authentication error:', authError);
+        return { data: null, error: { message: 'User not authenticated' } };
+      }
+
+      console.log('✅ [incidentService] User authenticated:', user.id);
+      console.log('🔐 [incidentService] Current auth.uid():', user.id);
+
+      // Clean and validate the incident data
+      const cleanedData = {
+        user_id: incidentData.user_id,
+        title: incidentData.title || 'Untitled Incident',
+        description: incidentData.description || '',
+        incident_type: incidentData.incident_type,
+        status: incidentData.status || 'reported',
+        latitude: incidentData.latitude || null,
+        longitude: incidentData.longitude || null,
+        location_description: incidentData.location_description || '',
+        evidence_files: Array.isArray(incidentData.evidence_files) ? incidentData.evidence_files : [],
+        witnesses: Array.isArray(incidentData.witnesses) ? incidentData.witnesses : [],
+        reported_at: incidentData.reported_at || new Date().toISOString()
+      };
+
+      console.log('🧹 [incidentService] Cleaned incident data:', JSON.stringify(cleanedData, null, 2));
+
+      // Attempt to create the incident
       const { data, error } = await supabase
         .from(TABLES.INCIDENTS)
-        .insert([incidentData])
+        .insert([cleanedData])
         .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [incidentService] Supabase error:', error);
+        console.error('❌ [incidentService] Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
+
+      console.log('✅ [incidentService] Incident created successfully:', data);
       return { data, error: null };
     } catch (error) {
+      console.error('💥 [incidentService] Unexpected error:', error);
       return { data: null, error };
     }
   },
