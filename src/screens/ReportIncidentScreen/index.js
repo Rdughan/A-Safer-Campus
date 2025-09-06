@@ -72,7 +72,7 @@ export default function ReportIncidentScreen({ navigation }) {
         longitude: location.coords.longitude,
       });
 
-      // Optionally get address from coordinates
+      // Get address from coordinates and populate location field
       try {
         const addressResponse = await Location.reverseGeocodeAsync({
           latitude: location.coords.latitude,
@@ -88,12 +88,17 @@ export default function ReportIncidentScreen({ navigation }) {
             address.region
           ].filter(Boolean).join(', ');
           
-          if (addressString && !location) {
+          if (addressString) {
             setLocation(addressString);
+            console.log('Location automatically populated:', addressString);
           }
         }
       } catch (addressError) {
         console.log('Could not get address:', addressError);
+        // If we can't get the address, use coordinates as fallback
+        const coordString = `${location.coords.latitude.toFixed(6)}, ${location.coords.longitude.toFixed(6)}`;
+        setLocation(coordString);
+        console.log('Using coordinates as location:', coordString);
       }
 
     } catch (error) {
@@ -277,12 +282,20 @@ export default function ReportIncidentScreen({ navigation }) {
     )}
   </View>
 )}
-      <TextInput
-        style={styles.input}
-        placeholder="Location on Campus"
-        value={location}
-        onChangeText={setLocation}
-      />
+      <View style={styles.locationInputContainer}>
+        <Ionicons 
+          name={locationLoading ? "location-outline" : "location"} 
+          size={20} 
+          color={locationLoading ? "#666" : "#239DD6"} 
+          style={styles.locationIcon}
+        />
+        <TextInput
+          style={styles.locationInput}
+          placeholder={locationLoading ? "Getting your location..." : "Location on Campus"}
+          value={location}
+          onChangeText={setLocation}
+        />
+      </View>
 
       {/* Location Status */}
       <View style={styles.locationStatus}>
@@ -292,7 +305,7 @@ export default function ReportIncidentScreen({ navigation }) {
           </Text>
         ) : currentLocation ? (
           <Text style={styles.locationStatusText}>
-            <Ionicons name="checkmark-circle" size={16} color="#4CAF50" /> Location captured
+            <Ionicons name="checkmark-circle" size={16} color="#4CAF50" /> Location captured and populated
           </Text>
         ) : (
           <View>
@@ -426,6 +439,25 @@ const styles = StyleSheet.create({
     fontSize: 15,
     borderColor: '#E5E7EB',
     borderWidth: 1,
+    fontFamily:'Montserrat-Regular',
+  },
+  locationInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderColor: '#E5E7EB',
+    borderWidth: 1,
+    marginVertical: 10,
+    paddingHorizontal: 14,
+  },
+  locationIcon: {
+    marginRight: 10,
+  },
+  locationInput: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 15,
     fontFamily:'Montserrat-Regular',
   },
   mediaBox: {

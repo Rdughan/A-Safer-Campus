@@ -13,14 +13,24 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.safecampus.app",
+      "config": {
+        "googleMapsApiKey": "AIzaSyCX2EchYK-_1u6zTqBFIx8d4BmFObIwntg"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.safecampus.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCX2EchYK-_1u6zTqBFIx8d4BmFObIwntg"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
