@@ -2,12 +2,12 @@
 
 ## Test Your Current API Key
 
-Your API key: `AIzaSyCX2EchYK-_1u6zTqBFIx8d4BmFObIwntg`
+Your API key: `AIzaSyBohvEVz1_67lh0bhThCQ9ulXHDGglH8H8`
 
 ### Test 1: Static Maps API (Satellite Imagery)
 Copy and paste this URL into your browser:
 ```
-https://maps.googleapis.com/maps/api/staticmap?center=5.6064,-0.2000&zoom=15&size=400x400&maptype=hybrid&key=AIzaSyCX2EchYK-_1u6zTqBFIx8d4BmFObIwntg
+https://maps.googleapis.com/maps/api/staticmap?center=5.6064,-0.2000&zoom=15&size=400x400&maptype=hybrid&key=AIzaSyBohvEVz1_67lh0bhThCQ9ulXHDGglH8H8
 ```
 
 **Expected Result**: You should see a satellite image of Accra with street names overlaid.
@@ -17,7 +17,7 @@ https://maps.googleapis.com/maps/api/staticmap?center=5.6064,-0.2000&zoom=15&siz
 ### Test 2: Places API (Landmarks)
 Copy and paste this URL into your browser:
 ```
-https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=5.6064,-0.2000&radius=1000&key=AIzaSyCX2EchYK-_1u6zTqBFIx8d4BmFObIwntg
+https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=5.6064,-0.2000&radius=1000&key=AIzaSyBohvEVz1_67lh0bhThCQ9ulXHDGglH8H8
 ```
 
 **Expected Result**: You should see JSON data with nearby places, landmarks, and businesses.
@@ -27,7 +27,7 @@ https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=5.6064,-0.
 ### Test 3: Geocoding API (Street Names)
 Copy and paste this URL into your browser:
 ```
-https://maps.googleapis.com/maps/api/geocode/json?address=Accra,Ghana&key=AIzaSyCX2EchYK-_1u6zTqBFIx8d4BmFObIwntg
+https://maps.googleapis.com/maps/api/geocode/json?address=Accra,Ghana&key=AIzaSyBohvEVz1_67lh0bhThCQ9ulXHDGglH8H8
 ```
 
 **Expected Result**: You should see JSON data with Accra's coordinates and address details.

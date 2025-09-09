@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  Platform,
 } from "react-native";
 import React, { useState, useEffect, useRef } from "react";
 import MapView, { Marker, Heatmap, PROVIDER_GOOGLE } from "react-native-maps";
@@ -35,6 +36,8 @@ const HomeScreen = ({ route }) => {
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
+  const [mapLoading, setMapLoading] = useState(true);
+  const [mapError, setMapError] = useState(null);
   const navigation = useNavigation();
   const mapRef = useRef(null);
 
@@ -53,6 +56,11 @@ const HomeScreen = ({ route }) => {
   }, [route.params?.mapType]);
 
   useEffect(() => {
+    console.log("🔧 [DEBUG] HomeScreen mounted");
+    console.log("🔧 [DEBUG] API Key:", MAPS_CONFIG.apiKey);
+    console.log("🔧 [DEBUG] Platform:", Platform.OS);
+    console.log("🔧 [DEBUG] Map Region:", mapRegion);
+    
     (async () => {
       // Request permission
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -67,31 +75,31 @@ const HomeScreen = ({ route }) => {
         maximumAge: 10000,
         timeout: 15000,
       });
-      
+
       const currentCoords = {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       };
-      
+
       setMarkerCoords(currentCoords);
-      
-             // Update map region to center on user location with proper zoom
-       const newRegion = {
-         latitude: currentCoords.latitude,
-         longitude: currentCoords.longitude,
-         latitudeDelta: 0.001, // Much closer zoom for street-level detail
-         longitudeDelta: 0.001,
-       };
-      
+
+      // Update map region to center on user location with proper zoom
+      const newRegion = {
+        latitude: currentCoords.latitude,
+        longitude: currentCoords.longitude,
+        latitudeDelta: 0.001, // Much closer zoom for street-level detail
+        longitudeDelta: 0.001,
+      };
+
       // Update the map region state
       setMapRegion(newRegion);
-      
+
       // Update the map region to center on user location
       if (mapRef.current) {
         mapRef.current.animateToRegion(newRegion, 1000); // Smooth animation over 1 second
       }
-      
-      console.log('Map centered on user location:', currentCoords);
+
+      console.log("Map centered on user location:", currentCoords);
     })();
   }, []);
 
@@ -191,12 +199,15 @@ const HomeScreen = ({ route }) => {
     weight: getIncidentWeight(incident.incident_type),
   }));
 
-      // Center map on user location
+  // Center map on user location
   const centerOnUserLocation = async () => {
     try {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Location Permission Required", "Please enable location access.");
+        Alert.alert(
+          "Location Permission Required",
+          "Please enable location access."
+        );
         return;
       }
 
@@ -205,74 +216,76 @@ const HomeScreen = ({ route }) => {
         maximumAge: 10000,
         timeout: 15000,
       });
-      
+
       const currentCoords = {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       };
-      
+
       setMarkerCoords(currentCoords);
-      
-             const newRegion = {
-         latitude: currentCoords.latitude,
-         longitude: currentCoords.longitude,
-         latitudeDelta: 0.001, // Much closer zoom for street-level detail
-         longitudeDelta: 0.001,
-       };
-      
+
+      const newRegion = {
+        latitude: currentCoords.latitude,
+        longitude: currentCoords.longitude,
+        latitudeDelta: 0.001, // Much closer zoom for street-level detail
+        longitudeDelta: 0.001,
+      };
+
       setMapRegion(newRegion);
-      
+
       if (mapRef.current) {
         mapRef.current.animateToRegion(newRegion, 1000);
       }
-      
-      console.log('Map centered on user location:', currentCoords);
+
+      console.log("Map centered on user location:", currentCoords);
     } catch (error) {
-      console.error('Error centering on location:', error);
+      console.error("Error centering on location:", error);
       Alert.alert("Error", "Could not get your current location.");
     }
   };
 
   const toggleHeatmap = () => {
-        setShowHeatmap(!showHeatmap);
-    };
+    setShowHeatmap(!showHeatmap);
+  };
 
-    // Group incidents by location
-    const groupIncidentsByLocation = (incidents) => {
-        const locationGroups = {};
-        incidents.forEach(incident => {
-            const key = `${incident.latitude?.toFixed(4)}_${incident.longitude?.toFixed(4)}`;
-            if (!locationGroups[key]) {
-                locationGroups[key] = {
-                    location: {
-                        latitude: incident.latitude,
-                        longitude: incident.longitude,
-                        location_description: incident.location_description
-                    },
-                    incidents: []
-                };
-            }
-            locationGroups[key].incidents.push(incident);
-        });
-        return Object.values(locationGroups);
-    };
+  // Group incidents by location
+  const groupIncidentsByLocation = (incidents) => {
+    const locationGroups = {};
+    incidents.forEach((incident) => {
+      const key = `${incident.latitude?.toFixed(
+        4
+      )}_${incident.longitude?.toFixed(4)}`;
+      if (!locationGroups[key]) {
+        locationGroups[key] = {
+          location: {
+            latitude: incident.latitude,
+            longitude: incident.longitude,
+            location_description: incident.location_description,
+          },
+          incidents: [],
+        };
+      }
+      locationGroups[key].incidents.push(incident);
+    });
+    return Object.values(locationGroups);
+  };
 
-    // Handle location selection
-    const handleLocationPress = (locationData) => {
-        setSelectedLocation(locationData.location);
-        setLocationIncidents(locationData.incidents);
-        setShowLocationModal(true);
-    };
+  // Handle location selection
+  const handleLocationPress = (locationData) => {
+    setSelectedLocation(locationData.location);
+    setLocationIncidents(locationData.incidents);
+    setShowLocationModal(true);
+  };
 
-    // Handle incident press from modal
-    const handleIncidentPress = (incident) => {
-        setShowLocationModal(false);
-        // Navigate to incident detail screen
-        navigation.navigate('IncidentDetail', { incidentId: incident.id });
-    };
+  // Handle incident press from modal
+  const handleIncidentPress = (incident) => {
+    setShowLocationModal(false);
+    // Navigate to incident detail screen
+    navigation.navigate("IncidentDetail", { incidentId: incident.id });
+  };
 
-    // Get location groups for markers
-    const locationGroups = groupIncidentsByLocation(incidents);
+  // Get location groups for markers
+  const locationGroups = groupIncidentsByLocation(incidents);
 
   return (
     <View style={styles.container}>
@@ -303,72 +316,96 @@ const HomeScreen = ({ route }) => {
         </View>
       </View>
 
-                                                       <MapView
-           ref={mapRef}
-           style={styles.map}
-           region={mapRegion}
-           onRegionChangeComplete={setMapRegion}
-           showsUserLocation={true}
-           followsUserLocation={false}
-           provider={PROVIDER_GOOGLE}
-           mapType="hybrid"
-           apiKey={MAPS_CONFIG.apiKey}
-           showsBuildings={true}
-           showsIndoors={true}
-           showsCompass={true}
-           showsScale={true}
-           showsMyLocationButton={true}
-           showsTraffic={true}
-           liteMode={false}
-           zoomEnabled={true}
-           scrollEnabled={true}
-           rotateEnabled={true}
-           pitchEnabled={true}
-           minZoomLevel={15}
-           maxZoomLevel={20}
-           showsPointsOfInterest={true}
-           showsLandmarks={true}
-           showsTransit={true}
-           showsIndoorLevelPicker={true}
-         >
-                        {/* Custom marker for user location */}
-                {markerCoords && (
-                    <Marker
-                        coordinate={markerCoords}
-                        title="Your Location"
-                        description="You are here"
-                        pinColor="blue"
-                    />
-                )}
+       <MapView
+         ref={mapRef}
+         style={styles.map}
+         region={mapRegion}
+         mapType="standard"
+         onMapReady={() => {
+           console.log("✅ Map is ready!");
+           console.log("📍 Map region:", mapRegion);
+           console.log("🗺️ Map type: standard");
+           console.log("🔑 API Key configured:", !!MAPS_CONFIG.apiKey);
+           setMapLoading(false);
+         }}
+         onMapLoaded={() => {
+           console.log("✅ Map loaded successfully!");
+           console.log("🌍 Map tiles should now be visible");
+           setMapLoading(false);
+         }}
+         onError={(error) => {
+           console.error("❌ Map error:", error);
+           setMapError(error.message || "Map failed to load");
+           setMapLoading(false);
+           Alert.alert(
+             "Map Error",
+             `Map failed to load. This might be due to:\n\n1. Internet connection issues\n2. Google Maps API key configuration\n3. API quota exceeded\n\nError: ${error.message}`
+           );
+         }}
+       >
+        {/* Custom marker for user location */}
+        {markerCoords && (
+          <Marker
+            coordinate={markerCoords}
+            title="Your Location"
+            description="You are here"
+            pinColor="blue"
+          />
+        )}
 
-                {/* Location-specific incident markers */}
-                {locationGroups.map((locationData, index) => (
-                    <Marker
-                        key={index}
-                        coordinate={locationData.location}
-                        title={`${locationData.incidents.length} incident${locationData.incidents.length !== 1 ? 's' : ''}`}
-                        description="Tap for details"
-                        pinColor={locationData.incidents.length > 3 ? "red" : locationData.incidents.length > 1 ? "orange" : "yellow"}
-                        onPress={() => handleLocationPress(locationData)}
-                    />
-                ))}
+        {/* Location-specific incident markers */}
+        {locationGroups.map((locationData, index) => (
+          <Marker
+            key={index}
+            coordinate={locationData.location}
+            title={`${locationData.incidents.length} incident${
+              locationData.incidents.length !== 1 ? "s" : ""
+            }`}
+            description="Tap for details"
+            pinColor={
+              locationData.incidents.length > 3
+                ? "red"
+                : locationData.incidents.length > 1
+                ? "orange"
+                : "yellow"
+            }
+            onPress={() => handleLocationPress(locationData)}
+          />
+        ))}
 
-                {/* Remove the hardcoded Accra marker */}
+        {/* Remove the hardcoded Accra marker */}
 
         {/* Safety Heatmap */}
-                 {showHeatmap && heatmapPoints.length > 0 && (
-           <Heatmap
-             points={heatmapPoints}
-             radius={50}
-             opacity={0.3}
-             gradient={{
-               colors: ["#00ff00", "#ffff00", "#ff0000"],
-               startPoints: [0.2, 0.5, 0.8],
-               colorMapSize: 2000,
-             }}
-           />
-         )}
-      </MapView>
+        {showHeatmap && heatmapPoints.length > 0 && (
+          <Heatmap
+            points={heatmapPoints}
+            radius={50}
+            opacity={0.3}
+            gradient={{
+              colors: ["#00ff00", "#ffff00", "#ff0000"],
+              startPoints: [0.2, 0.5, 0.8],
+              colorMapSize: 2000,
+            }}
+          />
+        )}
+       </MapView>
+
+      {/* Loading Overlay */}
+      {mapLoading && (
+        <View style={styles.mapLoadingOverlay}>
+          <Text style={styles.mapLoadingText}>Loading map...</Text>
+          <Text style={styles.mapLoadingSubtext}>If map doesn't load, check your internet connection</Text>
+        </View>
+      )}
+
+      {/* Error Overlay */}
+      {mapError && (
+        <View style={styles.mapErrorOverlay}>
+          <Icon name="warning" size={24} color="#ff6b6b" />
+          <Text style={styles.mapErrorText}>Map Tiles Not Loading</Text>
+          <Text style={styles.mapErrorSubtext}>Check Google Cloud Console API settings</Text>
+        </View>
+      )}
 
       {/* Time Filter Buttons */}
       <View style={styles.filterContainer}>
@@ -393,27 +430,25 @@ const HomeScreen = ({ route }) => {
         ))}
       </View>
 
-             {/* Toggle Heatmap Button */}
-       <TouchableOpacity
-         style={styles.toggleHeatmapButton}
-         onPress={toggleHeatmap}
-       >
-         <Icon name={showHeatmap ? "eye-off" : "eye"} size={24} color="#fff" />
-         <Text style={styles.toggleHeatmapButtonText}>
-           {showHeatmap ? "Hide" : "Show"} Heatmap
-         </Text>
-       </TouchableOpacity>
+      {/* Toggle Heatmap Button */}
+      <TouchableOpacity
+        style={styles.toggleHeatmapButton}
+        onPress={toggleHeatmap}
+      >
+        <Icon name={showHeatmap ? "eye-off" : "eye"} size={24} color="#fff" />
+        <Text style={styles.toggleHeatmapButtonText}>
+          {showHeatmap ? "Hide" : "Show"} Heatmap
+        </Text>
+      </TouchableOpacity>
 
-       {/* Center on My Location Button */}
-       <TouchableOpacity
-         style={styles.centerLocationButton}
-         onPress={centerOnUserLocation}
-       >
-         <Icon name="locate" size={24} color="#fff" />
-         <Text style={styles.centerLocationButtonText}>
-           My Location
-         </Text>
-       </TouchableOpacity>
+      {/* Center on My Location Button */}
+      <TouchableOpacity
+        style={styles.centerLocationButton}
+        onPress={centerOnUserLocation}
+      >
+        <Icon name="locate" size={24} color="#fff" />
+        <Text style={styles.centerLocationButtonText}>My Location</Text>
+      </TouchableOpacity>
 
       {/* Stats */}
       {showHeatmap && (
@@ -599,47 +634,47 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-     toggleHeatmapButtonText: {
-     color: "#fff",
-     marginLeft: 5,
-     fontSize: 12,
-     fontFamily: "Montserrat-Bold",
-   },
-   centerLocationButton: {
-     position: "absolute",
-     bottom: 30,
-     left: 20,
-     backgroundColor: "#239DD6",
-     paddingHorizontal: 15,
-     paddingVertical: 10,
-     borderRadius: 20,
-     flexDirection: "row",
-     alignItems: "center",
-     shadowColor: "#000",
-     shadowOffset: { width: 0, height: 2 },
-     shadowOpacity: 0.25,
-     shadowRadius: 3.84,
-     elevation: 5,
-   },
-   centerLocationButtonText: {
-     color: "#fff",
-     marginLeft: 5,
-     fontSize: 12,
-     fontFamily: "Montserrat-Bold",
-   },
-     statsContainer: {
-     position: "absolute",
-     bottom: 120,
-     left: 20,
-     backgroundColor: "rgba(255, 255, 255, 0.9)",
-     padding: 8,
-     borderRadius: 8,
-     shadowColor: "#000",
-     shadowOffset: { width: 0, height: 2 },
-     shadowOpacity: 0.25,
-     shadowRadius: 3.84,
-     elevation: 5,
-   },
+  toggleHeatmapButtonText: {
+    color: "#fff",
+    marginLeft: 5,
+    fontSize: 12,
+    fontFamily: "Montserrat-Bold",
+  },
+  centerLocationButton: {
+    position: "absolute",
+    bottom: 30,
+    left: 20,
+    backgroundColor: "#239DD6",
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  centerLocationButtonText: {
+    color: "#fff",
+    marginLeft: 5,
+    fontSize: 12,
+    fontFamily: "Montserrat-Bold",
+  },
+  statsContainer: {
+    position: "absolute",
+    bottom: 120,
+    left: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    padding: 8,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
   statsText: {
     fontSize: 11,
     color: "#333",
@@ -682,5 +717,60 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: "#666",
     fontFamily: "Montserrat-Regular",
+  },
+  mapLoadingOverlay: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -75 }, { translateY: -30 }],
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    padding: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  mapLoadingText: {
+    fontSize: 16,
+    fontFamily: "Montserrat-Bold",
+    color: "#333",
+    marginBottom: 5,
+  },
+  mapLoadingSubtext: {
+    fontSize: 12,
+    fontFamily: "Montserrat-Regular",
+    color: "#666",
+    textAlign: "center",
+  },
+  mapErrorOverlay: {
+    position: "absolute",
+    top: 250,
+    left: 20,
+    right: 20,
+    backgroundColor: "rgba(255, 107, 107, 0.9)",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  mapErrorText: {
+    fontSize: 14,
+    fontFamily: "Montserrat-Bold",
+    color: "#fff",
+    marginTop: 5,
+  },
+  mapErrorSubtext: {
+    fontSize: 11,
+    fontFamily: "Montserrat-Regular",
+    color: "#fff",
+    textAlign: "center",
+    marginTop: 3,
   },
 });

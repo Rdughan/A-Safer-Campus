@@ -46,7 +46,7 @@ Search for and enable these APIs:
 
 ### Step 3: Check API Key Restrictions
 1. Go to "APIs & Services" > "Credentials"
-2. Find your API key: `AIzaSyCX2EchYK-_1u6zTqBFIx8d4BmFObIwntg`
+2. Find your API key: `AIzaSyBohvEVz1_67lh0bhThCQ9ulXHDGglH8H8`
 3. Make sure it has access to the enabled APIs
 4. Check if there are any restrictions that might block the services
 

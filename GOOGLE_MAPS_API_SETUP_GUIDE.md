@@ -49,7 +49,7 @@ The map is showing basic view without satellite imagery, street names, or landma
    - Select all the APIs you enabled above
 
 ### Step 4: Verify API Key
-Your current API key: `AIzaSyCX2EchYK-_1u6zTqBFIx8d4BmFObIwntg`
+Your current API key: `AIzaSyBohvEVz1_67lh0bhThCQ9ulXHDGglH8H8`
 
 ## Testing the Setup
 
