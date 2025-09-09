@@ -22,8 +22,6 @@ const INCIDENT_TYPE_OPTIONS = [
   { label: 'Theft', value: INCIDENT_TYPES.THEFT },
   { label: 'Assault', value: INCIDENT_TYPES.ASSAULT },
   { label: 'Harassment', value: INCIDENT_TYPES.HARASSMENT },
-  { label: 'Vandalism', value: INCIDENT_TYPES.VANDALISM },
-  { label: 'Medical Emergency', value: INCIDENT_TYPES.MEDICAL },
   { label: 'Other', value: INCIDENT_TYPES.OTHER }
 ];
 
@@ -286,10 +284,6 @@ export default function ReportIncidentScreen({ navigation }) {
         <Text style={[styles.headerTitle, { color: theme.text }]}>Report Incident</Text>
       </View>
       <ScrollView style={[styles.scrollContainer, { backgroundColor: theme.background }]}> 
-        <View style={styles.toggleRow}>
-          <Text style={[styles.label, { color: theme.text }]}>Report Anonymously</Text>
-          <Switch value={isAnonymous} onValueChange={setIsAnonymous} />
-        </View>
 
         <View style={styles.mediaContainer}>
           <Text style={[styles.label, { color: theme.text }]}>Add Photo/Video Evidence</Text>
@@ -490,8 +484,8 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
     padding: 20,
-    marginTop: 150,
-    paddingBottom:40
+    marginTop: 100,
+   
     
   },
    mainContainer: {

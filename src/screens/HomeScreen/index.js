@@ -26,7 +26,6 @@ const HomeScreen = ({ route }) => {
     const [modalData, setModalData] = useState({ title: '', message: '', type: 'success' });
     const [isMapMoving, setIsMapMoving] = useState(false);
 
-    // Campus data for Ghana
     const ghanaCampuses = [
         {
             id: 1,

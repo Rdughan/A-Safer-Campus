@@ -91,8 +91,26 @@ const SignUpScreen = ({navigation}) => {
               <View style={styles.inputView}>
                 <InputField placeholder="Email" iconName="email-outline" value={email} onChangeText={setEmail} style={styles.inputOverride}/>            
                 <InputField placeholder="Student ID" iconName="account-outline" value={studentID} onChangeText={setStudentID} style={styles.inputOverride} /> 
-                <InputField placeholder="Password" iconName="key-outline" value={password} secureTextEntry={true} onChangeText={setPassword} style={styles.inputOverride} />
-                <InputField placeholder="Confirm Password" iconName="key-outline" value={Confirmpassword} secureTextEntry={true} onChangeText={setConfirmPassword} style={styles.inputOverride} />
+                <InputField
+                  placeholder="Password"
+                  iconName="key-outline"
+                  value={password}
+                  secureTextEntry={true}
+                  onChangeText={setPassword}
+                  style={styles.inputOverride}
+                  textContentType="none" // Disable autofill
+                  autoComplete="off" // Disable autofill
+                />
+                <InputField
+                  placeholder="Confirm Password"
+                  iconName="key-outline"
+                  value={Confirmpassword}
+                  secureTextEntry={true}
+                  onChangeText={setConfirmPassword}
+                  style={styles.inputOverride}
+                  textContentType="none" // Disable autofill
+                  autoComplete="off" // Disable autofill
+                />
                  <InputField placeholder="Phone" iconName="phone-outline" value={Phone} onChangeText={setPhone} style={styles.inputOverride} />
               </View>  
 
