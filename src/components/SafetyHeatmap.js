@@ -35,14 +35,14 @@ const SafetyHeatmap = forwardRef(({
     }
   }));
 
-  // Update region when userLocation or initialRegion changes
+  // Update region when userLocation or initialRegion changes (only once)
   useEffect(() => {
-    if (userLocation) {
+    if (userLocation && !region) {
       setRegion(userLocation);
-    } else if (initialRegion) {
+    } else if (initialRegion && !region) {
       setRegion(initialRegion);
     }
-  }, [userLocation, initialRegion]);
+  }, [userLocation, initialRegion, region]);
 
   // Fetch incidents from Supabase
   const fetchIncidents = async () => {
@@ -118,17 +118,53 @@ const SafetyHeatmap = forwardRef(({
       }
 
       console.log('Final filtered incidents:', filteredIncidents.length);
-      setIncidents(filteredIncidents);
+      
+      // If no incidents found, show some mock data for demonstration
+      if (filteredIncidents.length === 0) {
+        const mockIncidents = [
+          {
+            id: 'mock-1',
+            incident_type: 'snake_bite',
+            latitude: 6.6735,
+            longitude: -1.5718,
+            title: 'Snake spotted near Unity Hall',
+            reported_at: new Date().toISOString(),
+            status: 'reported'
+          },
+          {
+            id: 'mock-2',
+            incident_type: 'theft',
+            latitude: 6.6740,
+            longitude: -1.5720,
+            title: 'Laptop stolen from library',
+            reported_at: new Date().toISOString(),
+            status: 'investigating'
+          },
+          {
+            id: 'mock-3',
+            incident_type: 'fire_attack',
+            latitude: 6.6730,
+            longitude: -1.5715,
+            title: 'Small fire in engineering block',
+            reported_at: new Date().toISOString(),
+            status: 'resolved'
+          }
+        ];
+        setIncidents(mockIncidents);
+        console.log('Using mock incidents for demonstration');
+      } else {
+        setIncidents(filteredIncidents);
+      }
 
-      // Update map region if we have incidents or a selected campus
-      if (selectedCampus) {
+      // Update map region if we have incidents or a selected campus (only if no region is set)
+      if (selectedCampus && !region) {
         setRegion({
           latitude: selectedCampus.latitude,
           longitude: selectedCampus.longitude,
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
         });
-      } else if (filteredIncidents.length > 0) {
+      } else if (filteredIncidents.length > 0 && !region) {
         const lats = filteredIncidents.map(i => i.latitude);
         const lngs = filteredIncidents.map(i => i.longitude);
         
@@ -156,26 +192,72 @@ const SafetyHeatmap = forwardRef(({
     fetchIncidents();
   }, [timeFilter, user, selectedCampus]);
 
-  // Convert incidents to heatmap points
-  const heatmapPoints = incidents.map(incident => ({
-    latitude: incident.latitude,
-    longitude: incident.longitude,
-    weight: getIncidentWeight(incident.incident_type), // Weight based on incident severity
-  }));
-
   // Get weight based on incident type severity
   const getIncidentWeight = (incidentType) => {
     const weights = {
+      'snake_bite': 1.0,
+      'fire_attack': 1.0,
       'assault': 1.0,
-      'theft': 0.7,
-      'harassment': 0.8,
-      'vandalism': 0.6,
       'medical': 0.9,
-      'fire': 1.0,
+      'harassment': 0.8,
+      'theft': 0.7,
+      'pickpocketing': 0.6,
+      'vandalism': 0.6,
       'other': 0.5,
     };
     return weights[incidentType] || 0.5;
   };
+
+  // Group incidents by type and nearby location for clustering
+  const groupIncidentsByTypeAndLocation = (incidents) => {
+    const groups = {};
+    const proximityThreshold = 0.001; // ~100 meters
+    
+    incidents.forEach(incident => {
+      const key = `${incident.incident_type}`;
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      
+      // Check if there's a nearby incident of the same type
+      let addedToExistingGroup = false;
+      for (let group of groups[key]) {
+        const distance = Math.sqrt(
+          Math.pow(incident.latitude - group.center.latitude, 2) +
+          Math.pow(incident.longitude - group.center.longitude, 2)
+        );
+        
+        if (distance <= proximityThreshold) {
+          group.incidents.push(incident);
+          // Update center to average position
+          group.center.latitude = group.incidents.reduce((sum, inc) => sum + inc.latitude, 0) / group.incidents.length;
+          group.center.longitude = group.incidents.reduce((sum, inc) => sum + inc.longitude, 0) / group.incidents.length;
+          addedToExistingGroup = true;
+          break;
+        }
+      }
+      
+      if (!addedToExistingGroup) {
+        groups[key].push({
+          center: { latitude: incident.latitude, longitude: incident.longitude },
+          incidents: [incident],
+          type: incident.incident_type
+        });
+      }
+    });
+    
+    return groups;
+  };
+
+  // Group incidents by type and location for better visualization
+  const groupedIncidents = groupIncidentsByTypeAndLocation(incidents);
+
+  // Convert incidents to heatmap points with clustering
+  const heatmapPoints = incidents.map(incident => ({
+    latitude: incident.latitude,
+    longitude: incident.longitude,
+    weight: getIncidentWeight(incident.incident_type),
+  }));
 
   if (loading) {
     return (
@@ -194,7 +276,14 @@ const SafetyHeatmap = forwardRef(({
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         region={region}
-        onRegionChangeComplete={setRegion}
+        onRegionChangeComplete={(newRegion) => {
+          // Only update if the change is significant to prevent constant updates
+          const latDiff = Math.abs(newRegion.latitude - region.latitude);
+          const lngDiff = Math.abs(newRegion.longitude - region.longitude);
+          if (latDiff > 0.001 || lngDiff > 0.001) {
+            setRegion(newRegion);
+          }
+        }}
         showsUserLocation={true}
         showsMyLocationButton={false} // We have our own location button
         showsCompass={true}
@@ -227,18 +316,31 @@ const SafetyHeatmap = forwardRef(({
           />
         )}
 
-        {/* Incident Markers */}
-        {!showHeatmap && incidents.map((incident, index) => (
+        {/* Clustered Incident Markers */}
+        {!showHeatmap && Object.values(groupedIncidents).flat().map((group, index) => (
           <Marker
-            key={index}
+            key={`group-${index}`}
             coordinate={{
-              latitude: incident.latitude,
-              longitude: incident.longitude,
+              latitude: group.center.latitude,
+              longitude: group.center.longitude,
             }}
-            title={`${incident.incident_type} Incident`}
-            description={`Reported on ${new Date(incident.reported_at).toLocaleDateString()}`}
-            pinColor={getIncidentColor(incident.incident_type)}
-          />
+            title={`${group.incidents.length} ${group.type.replace('_', ' ')} incident${group.incidents.length > 1 ? 's' : ''}`}
+            description={`${group.incidents.length} incident${group.incidents.length > 1 ? 's' : ''} reported in this area`}
+            pinColor={getIncidentColor(group.type)}
+          >
+            <View style={[
+              styles.clusterMarker,
+              { backgroundColor: getIncidentColor(group.type) },
+              group.incidents.length > 1 && styles.clusterMarkerLarge
+            ]}>
+              <Text style={[
+                styles.clusterText,
+                group.incidents.length > 1 && styles.clusterTextLarge
+              ]}>
+                {group.incidents.length}
+              </Text>
+            </View>
+          </Marker>
         ))}
 
         {showHeatmap && heatmapPoints.length > 0 && (
@@ -256,23 +358,38 @@ const SafetyHeatmap = forwardRef(({
       </MapView>
       
       {/* Legend */}
-      {showHeatmap && heatmapPoints.length > 0 && (
+      {incidents.length > 0 && (
         <View style={[styles.legend, { backgroundColor: theme.card + 'E6' }]}>
-          <Text style={[styles.legendTitle, { color: theme.text }]}>Safety Heatmap</Text>
-          <View style={styles.legendItems}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendColor, { backgroundColor: '#00ff00' }]} />
-              <Text style={[styles.legendText, { color: theme.text }]}>Low Risk</Text>
+          <Text style={[styles.legendTitle, { color: theme.text }]}>
+            {showHeatmap ? 'Safety Heatmap' : 'Incident Types'}
+          </Text>
+          {showHeatmap ? (
+            <View style={styles.legendItems}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendColor, { backgroundColor: '#00ff00' }]} />
+                <Text style={[styles.legendText, { color: theme.text }]}>Low Risk</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendColor, { backgroundColor: '#ffff00' }]} />
+                <Text style={[styles.legendText, { color: theme.text }]}>Medium Risk</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendColor, { backgroundColor: '#ff0000' }]} />
+                <Text style={[styles.legendText, { color: theme.text }]}>High Risk</Text>
+              </View>
             </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendColor, { backgroundColor: '#ffff00' }]} />
-              <Text style={[styles.legendText, { color: theme.text }]}>Medium Risk</Text>
+          ) : (
+            <View style={styles.legendItems}>
+              {[...new Set(incidents.map(i => i.incident_type))].map(type => (
+                <View key={type} style={styles.legendItem}>
+                  <View style={[styles.legendColor, { backgroundColor: getIncidentColor(type) }]} />
+                  <Text style={[styles.legendText, { color: theme.text }]}>
+                    {getIncidentDisplayName(type)}
+                  </Text>
+                </View>
+              ))}
             </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendColor, { backgroundColor: '#ff0000' }]} />
-              <Text style={[styles.legendText, { color: theme.text }]}>High Risk</Text>
-            </View>
-          </View>
+          )}
         </View>
       )}
       
@@ -299,15 +416,33 @@ const SafetyHeatmap = forwardRef(({
 // Helper function to get incident color
 const getIncidentColor = (incidentType) => {
   const colors = {
-    'assault': '#ff0000',
-    'theft': '#ff6600',
-    'harassment': '#ff9900',
-    'vandalism': '#ffcc00',
-    'medical': '#ff0066',
-    'fire': '#ff0000',
-    'other': '#999999',
+    'snake_bite': '#8B0000',     // Dark red - high danger
+    'fire_attack': '#FF4500',    // Orange red - fire
+    'assault': '#DC143C',        // Crimson - violence
+    'medical': '#FF1493',        // Deep pink - medical emergency
+    'harassment': '#FF6347',     // Tomato - harassment
+    'theft': '#FF8C00',          // Dark orange - theft
+    'pickpocketing': '#FFA500',  // Orange - pickpocketing
+    'vandalism': '#FFD700',      // Gold - vandalism
+    'other': '#808080',          // Gray - other
   };
-  return colors[incidentType] || '#999999';
+  return colors[incidentType] || '#808080';
+};
+
+// Helper function to get incident type display name
+const getIncidentDisplayName = (incidentType) => {
+  const displayNames = {
+    'snake_bite': 'Snake Bite',
+    'fire_attack': 'Fire Attack',
+    'assault': 'Assault',
+    'medical': 'Medical Emergency',
+    'harassment': 'Harassment',
+    'theft': 'Theft',
+    'pickpocketing': 'Pickpocketing',
+    'vandalism': 'Vandalism',
+    'other': 'Other',
+  };
+  return displayNames[incidentType] || incidentType;
 };
 
 const styles = StyleSheet.create({
@@ -378,6 +513,34 @@ const styles = StyleSheet.create({
   statsText: {
     fontSize: 12,
     fontFamily: 'Montserrat-Regular',
+  },
+  clusterMarker: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  clusterMarkerLarge: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  clusterText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+    fontFamily: 'Montserrat-Bold',
+  },
+  clusterTextLarge: {
+    fontSize: 14,
   },
 });
 

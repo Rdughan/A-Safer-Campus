@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Switch,TouchableWithoutFeedback,
-  StyleSheet, Image, ScrollView, Platform, Animated, Alert, Modal
+  StyleSheet, Image, ScrollView, Platform, Animated, Alert, Modal, ActivityIndicator
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
@@ -14,6 +14,7 @@ import { INCIDENT_TYPES } from '../../config/supabase';
 import { AuthContext } from '../../context/AuthContext';
 import { useTheme } from '../../hooks/useTheme';
 import CustomButton from '../../components/CustomButton';
+import LocationPickerModal from '../../components/LocationPickerModal';
 
 const INCIDENT_TYPE_OPTIONS = [
   { label: 'Snake Bite', value: INCIDENT_TYPES.SNAKE_BITE },
@@ -42,6 +43,8 @@ export default function ReportIncidentScreen({ navigation }) {
   const [submitting, setSubmitting] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [selectedCoordinates, setSelectedCoordinates] = useState(null);
 
   // Get current location when component mounts
   useEffect(() => {
@@ -238,7 +241,23 @@ export default function ReportIncidentScreen({ navigation }) {
     );
   };
 
-  const handleSubmit = () => {
+  const handleLocationSelect = (coordinates) => {
+    setSelectedCoordinates(coordinates);
+    setLocation(`Lat: ${coordinates.latitude.toFixed(6)}, Lng: ${coordinates.longitude.toFixed(6)}`);
+  };
+
+  const handleSubmit = async () => {
+    // Validate required fields
+    if (!incidentType) {
+      Alert.alert('Error', 'Please select an incident type.');
+      return;
+    }
+
+    if (!selectedCoordinates) {
+      Alert.alert('Error', 'Please select a location on the map.');
+      return;
+    }
+
     Animated.sequence([
       Animated.timing(showSubmitAnimation, {
         toValue: 0.8,
@@ -268,11 +287,52 @@ export default function ReportIncidentScreen({ navigation }) {
     setShowConfirmationModal(true);
   };
 
-  const handleConfirmSubmit = () => {
+  const handleConfirmSubmit = async () => {
     setShowConfirmationModal(false);
-    // Here you can add any additional logic after confirmation
-    // For example, navigate to a success screen or show a success message
+    setSubmitting(true);
+
+    try {
+      // Prepare incident data for database
+      const incidentData = {
+        user_id: user?.id || '00000000-0000-0000-0000-000000000001', // Use test user ID if no user
+        title: `${incidentType.replace('_', ' ')} Incident`,
+        description: description || `Incident reported at ${location}`,
+        incident_type: incidentType,
+        status: 'reported',
+        latitude: selectedCoordinates.latitude,
+        longitude: selectedCoordinates.longitude,
+        location_description: location,
+        evidence_files: media ? [media] : [],
+        witnesses: [],
+        reported_at: new Date().toISOString(),
+      };
+
+      console.log('Creating incident with data:', incidentData);
+
+      // Save to database
+      const { data, error } = await incidentService.createIncident(incidentData);
+      
+      if (error) {
+        console.error('Error creating incident:', error);
+        Alert.alert('Error', 'Failed to submit incident report. Please try again.');
+        return;
+      }
+
+      console.log('Incident created successfully:', data);
+      Alert.alert(
+        'Success', 
+        'Incident report submitted successfully!',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
+
+    } catch (error) {
+      console.error('Error submitting incident:', error);
+      Alert.alert('Error', 'Failed to submit incident report. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
+
 
   const handleCancelSubmit = () => {
     setShowConfirmationModal(false);
@@ -338,17 +398,26 @@ export default function ReportIncidentScreen({ navigation }) {
           </View>
         )}
 
-        <TextInput
-          style={[
-            styles.input,
-            { backgroundColor: theme.card, borderColor: theme.border },
-            isDarkMode && { color: '#fff' }
-          ]}
-          placeholder="Location on Campus"
-          value={location}
-          onChangeText={setLocation}
-          placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
-        />
+        <Text style={[styles.label, { color: theme.text }]}>Select Incident Location</Text>
+        <TouchableOpacity 
+          style={[styles.locationPickerButton, { backgroundColor: theme.card, borderColor: theme.border }]}
+          onPress={() => setShowLocationPicker(true)}
+        >
+          <View style={styles.locationPickerContent}>
+            <Ionicons name="map-outline" size={20} color={theme.primary} />
+            <View style={styles.locationPickerText}>
+              <Text style={[styles.locationPickerTitle, { color: theme.text }]}>
+                {selectedCoordinates ? 'Location Selected' : 'Tap to select location on map'}
+              </Text>
+              {selectedCoordinates && (
+                <Text style={[styles.locationPickerSubtitle, { color: theme.primary }]}>
+                  {location}
+                </Text>
+              )}
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={theme.primary} />
+          </View>
+        </TouchableOpacity>
 
         {locationLoading ? (
           <Text style={[styles.locationStatusText, { color: isDarkMode ? '#FFFFFF' : '#333' }]}>
@@ -356,7 +425,7 @@ export default function ReportIncidentScreen({ navigation }) {
           </Text>
         ) : currentLocation ? (
           <Text style={[styles.locationStatusText, { color: isDarkMode ? '#FFFFFF' : '#333' }]}>
-            <Ionicons name="checkmark-circle" size={16} color="#4CAF50" /> Location captured automatically
+            <Ionicons name="checkmark-circle" size={16} color="#4CAF50" /> Current location available
           </Text>
         ) : null}
 
@@ -406,10 +475,27 @@ export default function ReportIncidentScreen({ navigation }) {
         </View>
 
         <Animated.View style={{ transform: [{ scale: showSubmitAnimation }] }}>
-          <TouchableOpacity style={[styles.submitButton, { backgroundColor: isDarkMode ? '#239DD6' : theme.primary }]} onPress={handleSubmit}>
-            <Text style={[styles.submitText, { color: isDarkMode ? theme.text : '#fff' }]}>
-              <Ionicons name="send-outline" size={18} /> Submit Report
-            </Text>
+          <TouchableOpacity 
+            style={[
+              styles.submitButton, 
+              { backgroundColor: isDarkMode ? '#239DD6' : theme.primary },
+              submitting && styles.submitButtonDisabled
+            ]} 
+            onPress={handleSubmit}
+            disabled={submitting}
+          >
+            {submitting ? (
+              <View style={styles.submitLoading}>
+                <ActivityIndicator size="small" color="#fff" />
+                <Text style={[styles.submitText, { color: '#fff', marginLeft: 10 }]}>
+                  Submitting...
+                </Text>
+              </View>
+            ) : (
+              <Text style={[styles.submitText, { color: isDarkMode ? theme.text : '#fff' }]}>
+                <Ionicons name="send-outline" size={18} /> Submit Report
+              </Text>
+            )}
           </TouchableOpacity>
         </Animated.View>
       </ScrollView>
@@ -476,6 +562,14 @@ export default function ReportIncidentScreen({ navigation }) {
           </View>
         </View>
       </Modal>
+
+      {/* Location Picker Modal */}
+      <LocationPickerModal
+        visible={showLocationPicker}
+        onClose={() => setShowLocationPicker(false)}
+        onLocationSelect={handleLocationSelect}
+        initialLocation={currentLocation}
+      />
     </View>
   );
 }
@@ -781,6 +875,34 @@ doneButtonText: {
     fontFamily: 'Montserrat-Regular',
     textAlign: 'center',
     marginBottom: 30,
+  },
+  locationPickerButton: {
+    borderRadius: 12,
+    padding: 15,
+    marginVertical: 10,
+    borderWidth: 1,
+  },
+  locationPickerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  locationPickerText: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  locationPickerTitle: {
+    fontSize: 16,
+    fontFamily: 'Montserrat-Regular',
+    marginBottom: 2,
+  },
+  locationPickerSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Montserrat-Regular',
+  },
+  submitLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

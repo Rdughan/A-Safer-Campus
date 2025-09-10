@@ -1,10 +1,11 @@
 import { StyleSheet, Text, View, Dimensions, Image, TextInput, TouchableOpacity, Keyboard, Platform, TouchableWithoutFeedback } from 'react-native';
-import React, { useState, useEffect, useContext } from 'react'
+import React, { useState, useEffect, useContext, useRef } from 'react'
 import MapView, { UrlTile, Marker, PROVIDER_GOOGLE, Heatmap } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
 import * as Location from 'expo-location';
 import { useFocusEffect } from '@react-navigation/native';
 import CampusAlertModal from '../../components/CampusAlertModal';
+import SafetyHeatmap from '../../components/SafetyHeatmap';
 import { ThemeContext } from '../../context/ThemeContext';
 import { lightTheme, darkTheme } from '../../styles/themes';
 import Constants from 'expo-constants';
@@ -25,6 +26,8 @@ const HomeScreen = ({ route }) => {
     const [showModal, setShowModal] = useState(false);
     const [modalData, setModalData] = useState({ title: '', message: '', type: 'success' });
     const [isMapMoving, setIsMapMoving] = useState(false);
+    const [showRealHeatmap, setShowRealHeatmap] = useState(true);
+    const heatmapRef = useRef(null);
 
     const ghanaCampuses = [
         {
@@ -182,6 +185,7 @@ const HomeScreen = ({ route }) => {
                 setSelectedCampus(foundCampus);
                 setCampusMarkers([foundCampus]);
                 setHeatmapData(foundCampus.crimeHotspots);
+                setShowRealHeatmap(false); // Switch to search results
                 
                 // Zoom to campus with wider view to show entire campus
                 setMapRegion({
@@ -191,9 +195,19 @@ const HomeScreen = ({ route }) => {
                     longitudeDelta: 0.02
                 });
 
+                // Update real heatmap to focus on this campus if it exists
+                if (heatmapRef.current) {
+                    heatmapRef.current.updateRegion({
+                        latitude: foundCampus.location.latitude,
+                        longitude: foundCampus.location.longitude,
+                        latitudeDelta: 0.02,
+                        longitudeDelta: 0.02
+                    });
+                }
+
                 setModalData({
                     title: 'Campus Found!',
-                    message: `${foundCampus.name}\n${foundCampus.address}\n\nRed areas indicate crime and danger hotspots.`,
+                    message: `${foundCampus.name}\n${foundCampus.address}\n\nShowing real incident data and mock hotspots for comparison.`,
                     type: 'success'
                 });
                 setShowModal(true);
@@ -215,8 +229,17 @@ const HomeScreen = ({ route }) => {
         setSelectedCampus(null);
         setCampusMarkers([]);
         setHeatmapData([]);
+        setShowRealHeatmap(true); // Switch back to real heatmap
         if (markerCoords) {
             setMapRegion({
+                ...markerCoords,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01
+            });
+        }
+        // Reset real heatmap to user location
+        if (heatmapRef.current && markerCoords) {
+            heatmapRef.current.updateRegion({
                 ...markerCoords,
                 latitudeDelta: 0.01,
                 longitudeDelta: 0.01
@@ -415,69 +438,89 @@ const darkMapStyle = [
                     </View>
                 </View>
 
-                <TouchableOpacity 
-                    style={styles.mapTouchable} 
-                    activeOpacity={1} 
-                    onPress={dismissKeyboard}
-                >
-                <MapView
-                    style={styles.map}
-                    initialRegion={mapRegion || {
-                        latitude: 6.673175, 
-                        longitude: -1.565423,
-                        latitudeDelta: 0.01,
-                        longitudeDelta: 0.01
-                    }}
-                    region={mapRegion}
-                    showsUserLocation={true}
-                    followsUserLocation={true}
-                    provider={PROVIDER_GOOGLE}
-                    mapType="standard"
-                    customMapStyle={isDarkMode ? darkMapStyle : []} 
-                    onPanDrag={handleMapDragStart}
-                    onRegionChangeComplete={handleMapDragEnd}
-                    onPress={handleMapPress}
-                >
-                {/* Custom marker for user location */}
-                {markerCoords && (
-                    <Marker
-                        coordinate={markerCoords}
-                        title="Your Current Location"
-                        description="You are here"
-                        pinColor="blue"
-                    />
-                )}
-
-                {/* Campus markers */}
-                {campusMarkers.map((campus) => (
-                    <Marker
-                        key={campus.id}
-                        coordinate={campus.location}
-                        title={campus.name}
-                        description={campus.address}
-                        pinColor="red"
-                    />
-                ))}
-
-                {/* Crime hotspots heatmap */}
-                {heatmapData.length > 0 && (
-                    <Heatmap
-                        points={heatmapData.map(point => ({
-                            latitude: point.latitude,
-                            longitude: point.longitude,
-                            weight: point.intensity
-                        }))}
-                        radius={50}
-                        opacity={0.7}
-                        gradient={{
-                            colors: ['#00ff00', '#ffff00', '#ff0000'],
-                            startPoints: [0.2, 0.5, 0.8],
-                            colorMapSize: 2000
+                <View style={styles.mapContainer}>
+                    {/* Real Safety Heatmap - Always show */}
+                    <SafetyHeatmap
+                        ref={heatmapRef}
+                        style={styles.map}
+                        showHeatmap={true}
+                        timeFilter="all"
+                        userLocation={markerCoords}
+                        initialRegion={mapRegion || {
+                            latitude: 6.673175, 
+                            longitude: -1.565423,
+                            latitudeDelta: 0.01,
+                            longitudeDelta: 0.01
                         }}
                     />
-                                 )}
-                 </MapView>
-             </TouchableOpacity>
+
+                    {/* Search Results Overlay - Only show when searching */}
+                    {!showRealHeatmap && (
+                        <TouchableOpacity 
+                            style={styles.searchOverlay} 
+                            activeOpacity={1} 
+                            onPress={dismissKeyboard}
+                        >
+                            <MapView
+                                style={styles.map}
+                                initialRegion={mapRegion || {
+                                    latitude: 6.673175, 
+                                    longitude: -1.565423,
+                                    latitudeDelta: 0.01,
+                                    longitudeDelta: 0.01
+                                }}
+                                region={mapRegion}
+                                showsUserLocation={true}
+                                followsUserLocation={true}
+                                provider={PROVIDER_GOOGLE}
+                                mapType="standard"
+                                customMapStyle={isDarkMode ? darkMapStyle : []} 
+                                onPanDrag={handleMapDragStart}
+                                onRegionChangeComplete={handleMapDragEnd}
+                                onPress={handleMapPress}
+                            >
+                                {/* Custom marker for user location */}
+                                {markerCoords && (
+                                    <Marker
+                                        coordinate={markerCoords}
+                                        title="Your Current Location"
+                                        description="You are here"
+                                        pinColor="blue"
+                                    />
+                                )}
+
+                                {/* Campus markers */}
+                                {campusMarkers.map((campus) => (
+                                    <Marker
+                                        key={campus.id}
+                                        coordinate={campus.location}
+                                        title={campus.name}
+                                        description={campus.address}
+                                        pinColor="red"
+                                    />
+                                ))}
+
+                                {/* Crime hotspots heatmap from search */}
+                                {heatmapData.length > 0 && (
+                                    <Heatmap
+                                        points={heatmapData.map(point => ({
+                                            latitude: point.latitude,
+                                            longitude: point.longitude,
+                                            weight: point.intensity
+                                        }))}
+                                        radius={50}
+                                        opacity={0.7}
+                                        gradient={{
+                                            colors: ['#00ff00', '#ffff00', '#ff0000'],
+                                            startPoints: [0.2, 0.5, 0.8],
+                                            colorMapSize: 2000
+                                        }}
+                                    />
+                                )}
+                            </MapView>
+                        </TouchableOpacity>
+                    )}
+                </View>
 
             {/* Location refresh button */}
             <TouchableOpacity
@@ -557,9 +600,23 @@ const styles = StyleSheet.create({
     width:'100%',
     
   },
+  mapContainer: {
+    flex: 1,
+    width: '100%',
+    position: 'relative',
+  },
   mapTouchable: {
     flex: 1,
     width: '100%',
+  },
+  searchOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    zIndex: 10,
   },
   headerContainer:{
     width: '100%',
