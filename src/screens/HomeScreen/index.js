@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import React, { useState, useEffect, useRef } from "react";
 import MapView, { Marker, Heatmap, PROVIDER_GOOGLE } from "react-native-maps";
@@ -30,6 +32,9 @@ const HomeScreen = ({ route }) => {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [locationIncidents, setLocationIncidents] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [selectedSearchResult, setSelectedSearchResult] = useState(null);
   const [mapRegion, setMapRegion] = useState({
     latitude: 5.6064, // Default to Accra coordinates
     longitude: -0.2,
@@ -176,6 +181,20 @@ const HomeScreen = ({ route }) => {
     return unsubscribe;
   }, [navigation]);
 
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim().length > 2) {
+        searchForPlace(searchQuery);
+      } else {
+        setSearchResults([]);
+        setShowSearchResults(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
   // Get weight based on incident type severity
   const getIncidentWeight = (incidentType) => {
     const weights = {
@@ -248,6 +267,171 @@ const HomeScreen = ({ route }) => {
     setShowHeatmap(!showHeatmap);
   };
 
+  // Enhanced search function using both Places API and Geocoding API
+  const searchForPlace = async (query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      setSelectedSearchResult(null);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      let allResults = [];
+      
+      // First, try Places API for businesses and points of interest
+      try {
+        const placesResponse = await fetch(
+          `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${MAPS_CONFIG.apiKey}`
+        );
+        
+        const placesData = await placesResponse.json();
+        
+        if (placesData.status === 'OK' && placesData.results.length > 0) {
+          const placesResults = placesData.results.map(result => ({
+            address: result.formatted_address,
+            name: result.name,
+            location: {
+              latitude: result.geometry.location.lat,
+              longitude: result.geometry.location.lng,
+            },
+            placeId: result.place_id,
+            type: 'place'
+          }));
+          allResults = [...allResults, ...placesResults];
+        }
+      } catch (placesError) {
+        console.log('Places API error:', placesError);
+      }
+      
+      // Then, try Geocoding API for addresses and locations
+      try {
+        const geocodeResponse = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${MAPS_CONFIG.apiKey}`
+        );
+        
+        const geocodeData = await geocodeResponse.json();
+        
+        if (geocodeData.status === 'OK' && geocodeData.results.length > 0) {
+          const geocodeResults = geocodeData.results.map(result => ({
+            address: result.formatted_address,
+            name: result.formatted_address,
+            location: {
+              latitude: result.geometry.location.lat,
+              longitude: result.geometry.location.lng,
+            },
+            placeId: result.place_id,
+            type: 'address'
+          }));
+          allResults = [...allResults, ...geocodeResults];
+        }
+      } catch (geocodeError) {
+        console.log('Geocoding API error:', geocodeError);
+      }
+      
+      // Remove duplicates based on place_id
+      const uniqueResults = allResults.filter((result, index, self) => 
+        index === self.findIndex(r => r.placeId === result.placeId)
+      );
+      
+      if (uniqueResults.length > 0) {
+        setSearchResults(uniqueResults.slice(0, 10)); // Limit to 10 results
+        setShowSearchResults(true);
+      } else {
+        // If no results, try with location context (e.g., "hostels in Accra")
+        const contextualQuery = `${query} in Ghana`;
+        const fallbackResponse = await fetch(
+          `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(contextualQuery)}&key=${MAPS_CONFIG.apiKey}`
+        );
+        
+        const fallbackData = await fallbackResponse.json();
+        
+        if (fallbackData.status === 'OK' && fallbackData.results.length > 0) {
+          const fallbackResults = fallbackData.results.map(result => ({
+            address: result.formatted_address,
+            name: result.name,
+            location: {
+              latitude: result.geometry.location.lat,
+              longitude: result.geometry.location.lng,
+            },
+            placeId: result.place_id,
+            type: 'place'
+          }));
+          
+          setSearchResults(fallbackResults.slice(0, 10));
+          setShowSearchResults(true);
+        } else {
+          Alert.alert('No Results', `No places found for "${query}". Try searching for specific locations like "hostels in Accra" or "University of Ghana".`);
+          setSearchResults([]);
+          setShowSearchResults(false);
+        }
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      Alert.alert('Search Error', 'Could not search for places. Please check your internet connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Zoom to selected search result
+  const zoomToSearchResult = (result) => {
+    console.log("🎯 Zooming to search result:", result);
+    
+    // Determine zoom level based on result type and search query
+    let latitudeDelta, longitudeDelta;
+    
+    // Check if this is a hostel or accommodation search
+    const isHostelSearch = searchQuery.toLowerCase().includes('hostel') || 
+                          searchQuery.toLowerCase().includes('accommodation') ||
+                          result.name?.toLowerCase().includes('hostel') ||
+                          result.address?.toLowerCase().includes('hostel');
+    
+    if (isHostelSearch) {
+      // For hostels, zoom in very close
+      latitudeDelta = 0.002;
+      longitudeDelta = 0.002;
+      console.log("🏠 Hostel detected - using close zoom");
+    } else if (result.type === 'place') {
+      // For other businesses, zoom in closer
+      latitudeDelta = 0.005;
+      longitudeDelta = 0.005;
+      console.log("🏢 Business detected - using medium zoom");
+    } else {
+      // For addresses and general locations, use standard zoom
+      latitudeDelta = 0.01;
+      longitudeDelta = 0.01;
+      console.log("📍 Address detected - using standard zoom");
+    }
+    
+    const newRegion = {
+      latitude: result.location.latitude,
+      longitude: result.location.longitude,
+      latitudeDelta: latitudeDelta,
+      longitudeDelta: longitudeDelta,
+    };
+    
+    console.log("📍 New region:", newRegion);
+    console.log("🗺️ MapRef current:", mapRef.current);
+    console.log("🔍 Zoom level - latDelta:", latitudeDelta, "lngDelta:", longitudeDelta);
+    
+    setMapRegion(newRegion);
+    setSearchQuery(result.name || result.address);
+    setShowSearchResults(false);
+    setSelectedSearchResult(result);
+    
+    // Animate to the new location with a small delay to ensure map is ready
+    setTimeout(() => {
+      if (mapRef.current) {
+        console.log("✅ Animating to region...");
+        mapRef.current.animateToRegion(newRegion, 1000);
+      } else {
+        console.log("❌ MapRef is null!");
+      }
+    }, 100);
+  };
+
   // Group incidents by location
   const groupIncidentsByLocation = (incidents) => {
     const locationGroups = {};
@@ -302,25 +486,62 @@ const HomeScreen = ({ route }) => {
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.searchBar}
-            placeholder="Search for a campus..."
+            placeholder="Search hostels, universities, places..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            onSubmitEditing={() => {}}
+            onSubmitEditing={() => searchForPlace(searchQuery)}
           />
           <TouchableOpacity
             style={styles.searchIconButton}
-            onPress={() => alert(`Searching for ${searchQuery}`)}
+            onPress={() => searchForPlace(searchQuery)}
+            disabled={loading}
           >
-            <Icon name="search" size={20} color="#fff" />
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Icon name="search" size={20} color="#fff" />
+            )}
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Search Results Dropdown */}
+      {showSearchResults && searchResults.length > 0 && (
+        <View style={styles.searchResultsContainer}>
+          <ScrollView style={styles.searchResultsList} showsVerticalScrollIndicator={false}>
+            {searchResults.map((result, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.searchResultItem}
+                onPress={() => zoomToSearchResult(result)}
+              >
+                <Icon 
+                  name={result.type === 'place' ? "business-outline" : "location-outline"} 
+                  size={20} 
+                  color="#666" 
+                />
+                <View style={styles.searchResultTextContainer}>
+                  {result.name && result.name !== result.address && (
+                    <Text style={styles.searchResultName}>{result.name}</Text>
+                  )}
+                  <Text style={styles.searchResultText}>{result.address}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
        <MapView
          ref={mapRef}
          style={styles.map}
          region={mapRegion}
+         provider={PROVIDER_GOOGLE}
          mapType="standard"
+         onPress={() => {
+           setShowSearchResults(false);
+           setSelectedSearchResult(null);
+         }}
          onMapReady={() => {
            console.log("✅ Map is ready!");
            console.log("📍 Map region:", mapRegion);
@@ -350,6 +571,16 @@ const HomeScreen = ({ route }) => {
             title="Your Location"
             description="You are here"
             pinColor="blue"
+          />
+        )}
+
+        {/* Search result marker */}
+        {selectedSearchResult && (
+          <Marker
+            coordinate={selectedSearchResult.location}
+            title={selectedSearchResult.name || "Search Result"}
+            description={selectedSearchResult.address}
+            pinColor="red"
           />
         )}
 
@@ -518,6 +749,9 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     padding: 10,
     borderRadius: 5,
+  },
+  mapContainer: {
+    flex: 1,
   },
   map: {
     flex: 1,
@@ -772,5 +1006,46 @@ const styles = StyleSheet.create({
     color: "#fff",
     textAlign: "center",
     marginTop: 3,
+  },
+  searchResultsContainer: {
+    position: "absolute",
+    top: 140,
+    left: 20,
+    right: 20,
+    backgroundColor: "white",
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 1000,
+    maxHeight: 200,
+    // maxWidth: 300,
+  },
+  searchResultsList: {
+    maxHeight: 200,
+  },
+  searchResultItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  searchResultTextContainer: {
+    marginLeft: 10,
+    flex: 1,
+  },
+  searchResultName: {
+    fontSize: 14,
+    color: "#333",
+    fontFamily: "Montserrat-Bold",
+    marginBottom: 2,
+  },
+  searchResultText: {
+    fontSize: 12,
+    color: "#666",
+    fontFamily: "Montserrat-Regular",
   },
 });
