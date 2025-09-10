@@ -43,6 +43,24 @@ export default function ReportIncidentScreen({ navigation }) {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
 
+
+  useEffect(() => {
+    if (navigation && navigation.addListener) {
+      const unsubscribe = navigation.addListener("focus", () => {
+        if (navigation.getState) {
+          const state = navigation.getState();
+          const params = state.routes.find(r => r.name === "ReportIncident")?.params;
+          if (params?.selectedLocation) {
+            setCurrentLocation(params.selectedLocation.coords);
+            setLocation(params.selectedLocation.address || "Custom Location");
+          }
+        }
+      });
+      return unsubscribe;
+    }
+  }, [navigation]);
+  
+  
   // Get current location when component mounts
   useEffect(() => {
     getCurrentLocation();
@@ -348,6 +366,14 @@ export default function ReportIncidentScreen({ navigation }) {
           onChangeText={setLocation}
           placeholderTextColor={isDarkMode ? '#ccc' : '#666'}
         />
+        <TouchableOpacity 
+  style={[styles.locationPickerButton, { borderColor: theme.border }]}
+  onPress={() => navigation.navigate("MapPicker")}
+>
+  <Ionicons name="map-outline" size={20} color={theme.primary} />
+  <Text style={[styles.locationPickerText, { color: theme.text }]}>Pick on Map</Text>
+</TouchableOpacity>
+
 
         {locationLoading ? (
           <Text style={[styles.locationStatusText, { color: isDarkMode ? '#FFFFFF' : '#333' }]}>

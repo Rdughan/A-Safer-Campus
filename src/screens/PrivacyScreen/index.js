@@ -40,13 +40,7 @@ const PrivacyScreen = ({ navigation }) => {
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <Text style={[styles.sectionName, { color: theme.text }]}>PRIVACY CONTROLS</Text>
 
-        <View style={[styles.settingRow, { borderBottomColor: theme.border }]}>
-          <Text style={[styles.label, { color: theme.text }]}>Private Profile</Text>
-          <Switch
-            value={isPrivate}
-            onValueChange={setIsPrivate}
-          />
-        </View>
+        
 
         <View style={[styles.settingRow, { borderBottomColor: theme.border }]}>
           <Text style={[styles.label, { color: theme.text }]}>Share Location with App</Text>

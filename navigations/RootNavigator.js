@@ -14,6 +14,7 @@ import ReportBugScreen from '../src/screens/ReportBug';
 import SafetyMapScreen from '../src/screens/SafetyMapScreen';
 import RoleBasedDashboard from '../src/screens/RoleBasedDashboard';
 import IncidentDetailScreen from '../src/screens/IncidentDetailScreen';
+import MapPickerScreen from '../src/screens/MapPickerScreen';
 import { useTheme } from '../src/hooks/useTheme';
 
 const Stack = createNativeStackNavigator();
@@ -55,6 +56,7 @@ export default function RootNavigator() {
           <Stack.Screen name="SafetyMap" component={SafetyMapScreen} />
           <Stack.Screen name="RoleBasedDashboard" component={RoleBasedDashboard} />
           <Stack.Screen name="IncidentDetail" component={IncidentDetailScreen} />
+          <Stack.Screen name="MapPicker" component={MapPickerScreen} />
         </>
       )}
       

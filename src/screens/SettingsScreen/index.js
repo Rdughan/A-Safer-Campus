@@ -115,7 +115,6 @@ const SettingsScreen = ({ navigation }) => {
   <ScrollView contentContainerStyle={styles.scrollContent}>
      <Text style={[styles.sectionName, { color: theme.text }]}>GENERAL</Text>
          <SettingsOption iconName="person-outline" label="Account" onPress={() => navigation.navigate('EditProfileScreen')} />  
-         <SettingsOption iconName="lock-closed-outline" label="Privacy" onPress={() => navigation.navigate('PrivacyScreen')} />
              <SettingsOption iconName="options-outline" label="Preferences" onPress={() => navigation.navigate('PreferencesScreen')}  />
          <SettingsOption iconName="information-circle-outline" label="About Us" onPress={() => navigation.navigate('AboutUsScreen')}  />
          <SettingsOption iconName="trash-outline" label="Delete Account" onPress={handleDeletePress} />
