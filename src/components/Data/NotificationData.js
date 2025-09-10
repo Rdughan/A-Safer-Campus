@@ -1,7 +1,7 @@
 export const NotificationData = [
   {
     id: '1',
-    title: 'FIRE OUTBREAK, 4 INJURIES, 1 DEAD',
+    title: 'FIRE OUTBREAK, 4 INJURIES',
     location: 'Golden Paradise Hostel, Ayeduase Gate',
     status: 'Police working to rescue hostages',
     time: '2hrs ago',

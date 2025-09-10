@@ -15,6 +15,8 @@ const SignUpScreen = ({navigation}) => {
   const [Phone, setPhone] = useState('');
   const [username, setUsername] = useState('Henry');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const { signUp } = useAuth();
@@ -95,21 +97,41 @@ const SignUpScreen = ({navigation}) => {
                   placeholder="Password"
                   iconName="key-outline"
                   value={password}
-                  secureTextEntry={true}
+                  secureTextEntry={!showPassword}
                   onChangeText={setPassword}
                   style={styles.inputOverride}
-                  textContentType="none" // Disable autofill
-                  autoComplete="off" // Disable autofill
+                  textContentType="none"
+                  autoComplete="off"
+                  importantForAutofill="no"
+                  rightIcon={
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                      <Ionicons
+                        name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                        size={20}
+                        color="gray"
+                      />
+                    </TouchableOpacity>
+                  }
                 />
                 <InputField
                   placeholder="Confirm Password"
                   iconName="key-outline"
                   value={Confirmpassword}
-                  secureTextEntry={true}
+                  secureTextEntry={!showConfirmPassword}
                   onChangeText={setConfirmPassword}
                   style={styles.inputOverride}
-                  textContentType="none" // Disable autofill
-                  autoComplete="off" // Disable autofill
+                  textContentType="none"
+                  autoComplete="off"
+                  importantForAutofill="no"
+                  rightIcon={
+                    <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                      <Ionicons
+                        name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                        size={20}
+                        color="gray"
+                      />
+                    </TouchableOpacity>
+                  }
                 />
                  <InputField placeholder="Phone" iconName="phone-outline" value={Phone} onChangeText={setPhone} style={styles.inputOverride} />
               </View>  

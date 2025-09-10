@@ -270,8 +270,7 @@ export default function ReportIncidentScreen({ navigation }) {
 
   const handleConfirmSubmit = () => {
     setShowConfirmationModal(false);
-    // Here you can add any additional logic after confirmation
-    // For example, navigate to a success screen or show a success message
+
   };
 
   const handleCancelSubmit = () => {
@@ -400,10 +399,7 @@ export default function ReportIncidentScreen({ navigation }) {
           />
         )}
 
-        <View style={styles.toggleRow}>
-          <Text style={[styles.label, { color: theme.text }]}>Send to Authorities</Text>
-          <Switch value={sendToAuthorities} onValueChange={setSendToAuthorities} />
-        </View>
+
 
         <Animated.View style={{ transform: [{ scale: showSubmitAnimation }] }}>
           <TouchableOpacity style={[styles.submitButton, { backgroundColor: isDarkMode ? '#239DD6' : theme.primary }]} onPress={handleSubmit}>
@@ -530,7 +526,8 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontFamily:'Montserrat-Bold',
-    marginTop:10
+    marginTop:10,
+   
   },
   input: {
     borderRadius: 12,
@@ -565,6 +562,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 10,
     marginVertical: 10,
+    marginTop:'5%'
   },
   typeButton: {
     backgroundColor: '#E2E8F0',
@@ -658,6 +656,7 @@ doneButtonText: {
     fontFamily:'Montserrat-Regular',
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom:15
   },
   locationButton: {
     backgroundColor: '#239DD6',
@@ -730,7 +729,6 @@ doneButtonText: {
   modalOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingVertical: 15,
     paddingHorizontal: 10,
     width: '100%',

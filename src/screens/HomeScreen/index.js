@@ -25,67 +25,7 @@ const HomeScreen = ({ route }) => {
     const [showModal, setShowModal] = useState(false);
     const [modalData, setModalData] = useState({ title: '', message: '', type: 'success' });
     const [isMapMoving, setIsMapMoving] = useState(false);
-
-    const ghanaCampuses = [
-        {
-            id: 1,
-            name: "University of Ghana",
-            location: { latitude: 5.6502, longitude: -0.1869 },
-            address: "Legon, Accra",
-            crimeHotspots: [
-                { latitude: 5.6502, longitude: -0.1869, intensity: 0.8 },
-                { latitude: 5.6510, longitude: -0.1875, intensity: 0.6 },
-                { latitude: 5.6495, longitude: -0.1860, intensity: 0.7 },
-                { latitude: 5.6508, longitude: -0.1880, intensity: 0.5 },
-                { latitude: 5.6490, longitude: -0.1855, intensity: 0.9 }
-            ]
-        },
-        {
-            id: 2,
-            name: "Kwame Nkrumah University of Science and Technology",
-            location: { latitude: 6.6720, longitude: -1.5713 },
-            address: "Kumasi",
-            crimeHotspots: [
-                { latitude: 6.6720, longitude: -1.5713, intensity: 0.7 },
-                { latitude: 6.6725, longitude: -1.5718, intensity: 0.8 },
-                { latitude: 6.6715, longitude: -1.5708, intensity: 0.6 },
-                { latitude: 6.6730, longitude: -1.5720, intensity: 0.5 }
-            ]
-        },
-        {
-            id: 3,
-            name: "University of Cape Coast",
-            location: { latitude: 5.1053, longitude: -1.2466 },
-            address: "Cape Coast",
-            crimeHotspots: [
-                { latitude: 5.1053, longitude: -1.2466, intensity: 0.6 },
-                { latitude: 5.1058, longitude: -1.2470, intensity: 0.7 },
-                { latitude: 5.1048, longitude: -1.2460, intensity: 0.5 }
-            ]
-        },
-        {
-            id: 4,
-            name: "University for Development Studies",
-            location: { latitude: 9.4035, longitude: -0.8423 },
-            address: "Tamale",
-            crimeHotspots: [
-                { latitude: 9.4035, longitude: -0.8423, intensity: 0.5 },
-                { latitude: 9.4040, longitude: -0.8428, intensity: 0.6 },
-                { latitude: 9.4030, longitude: -0.8418, intensity: 0.4 }
-            ]
-        },
-        {
-            id: 5,
-            name: "Ashesi University",
-            location: { latitude: 5.7167, longitude: -0.3333 },
-            address: "Berekuso, Accra",
-            crimeHotspots: [
-                { latitude: 5.7167, longitude: -0.3333, intensity: 0.4 },
-                { latitude: 5.7172, longitude: -0.3338, intensity: 0.5 },
-                { latitude: 5.7162, longitude: -0.3328, intensity: 0.3 }
-            ]
-        }
-    ];
+    const [ghanaCampuses, setGhanaCampuses] = useState([]);
 
     const getCurrentLocation = async () => {
         try {
@@ -156,6 +96,8 @@ const HomeScreen = ({ route }) => {
         }
     };
 
+    
+
     // Search for campus function
     const searchCampus = () => {
         if (!searchQuery.trim()) {
@@ -168,8 +110,11 @@ const HomeScreen = ({ route }) => {
             return;
         }
 
+        // Example Ghana campuses (replace/add as needed)
+       
+          
         setIsSearching(true);
-        
+
         // Simulate search delay
         setTimeout(() => {
             const query = searchQuery.toLowerCase().trim();
@@ -182,12 +127,12 @@ const HomeScreen = ({ route }) => {
                 setSelectedCampus(foundCampus);
                 setCampusMarkers([foundCampus]);
                 setHeatmapData(foundCampus.crimeHotspots);
-                
+
                 // Zoom to campus with wider view to show entire campus
                 setMapRegion({
                     latitude: foundCampus.location.latitude,
                     longitude: foundCampus.location.longitude,
-                    latitudeDelta: 0.02, // Wider view to show entire campus
+                    latitudeDelta: 0.02,
                     longitudeDelta: 0.02
                 });
 
@@ -200,7 +145,7 @@ const HomeScreen = ({ route }) => {
             } else {
                 setModalData({
                     title: 'Campus Not Found',
-                    message: 'No campus found with that name. Try searching for:\n\n• University of Ghana\n• KNUST\n• University of Cape Coast\n• UDS\n• Ashesi University',
+                    message: 'No campus found with that name. Please try again.',
                     type: 'error'
                 });
                 setShowModal(true);
@@ -261,6 +206,10 @@ const HomeScreen = ({ route }) => {
         getCurrentLocation();
     }, []);
 
+    useEffect(() => {
+        getCurrentLocation();
+    }, []);
+
     // Update map region when marker coordinates change
     useEffect(() => {
         if (markerCoords) {
@@ -271,6 +220,63 @@ const HomeScreen = ({ route }) => {
             });
         }
     }, [markerCoords]);
+
+    useEffect(() => {
+        const ghanaCampuses = [
+          {
+            id: 1,
+            name: "University of Ghana",
+            address: "Legon, Accra",
+            location: { latitude: 5.6506, longitude: -0.186964 },
+            crimeHotspots: [
+              { latitude: 5.651, longitude: -0.187, intensity: 1 },
+              { latitude: 5.649, longitude: -0.186, intensity: 0.8 },
+            ],
+          },
+          {
+            id: 2,
+            name: "Kwame Nkrumah University of Science and Technology (KNUST)",
+            address: "Kumasi, Ashanti",
+            location: { latitude: 6.672, longitude: -1.5713 },
+            crimeHotspots: [
+              { latitude: 6.673, longitude: -1.572, intensity: 1 },
+              { latitude: 6.671, longitude: -1.570, intensity: 0.9 },
+            ],
+          },
+          {
+            id: 3,
+            name: "University of Cape Coast",
+            address: "Cape Coast, Central Region",
+            location: { latitude: 5.1036, longitude: -1.2976 },
+            crimeHotspots: [
+              { latitude: 5.104, longitude: -1.298, intensity: 0.7 },
+              { latitude: 5.102, longitude: -1.296, intensity: 0.6 },
+            ],
+          },
+        {
+          id: 4,
+            name: "Ashesi University",
+            address: "Berekuso, Eastern Region",
+            location: { latitude: 5.7603, longitude: -0.2196 },
+            crimeHotspots: [
+            { latitude: 5.761, longitude: -0.220, intensity: 0.8 },
+            { latitude: 5.759, longitude: -0.218, intensity: 0.5 },
+            ],
+        },
+  {
+    id: 5,
+    name: "University of Energy and Natural Resources (UENR)",
+    address: "Sunyani, Bono Region",
+    location: { latitude: 7.3380, longitude: -2.3260 },
+    crimeHotspots: [
+      { latitude: 7.339, longitude: -2.327, intensity: 0.9 },
+      { latitude: 7.337, longitude: -2.325, intensity: 0.6 },
+    ],
+  },
+        ];
+      
+        setGhanaCampuses(ghanaCampuses);
+      }, []);
 
     // Refresh location when screen comes into focus
     useFocusEffect(
@@ -414,7 +420,7 @@ const darkMapStyle = [
                         )}
                     </View>
                 </View>
-
+                
                 <TouchableOpacity 
                     style={styles.mapTouchable} 
                     activeOpacity={1} 
@@ -438,6 +444,43 @@ const darkMapStyle = [
                     onRegionChangeComplete={handleMapDragEnd}
                     onPress={handleMapPress}
                 >
+                    <View style={styles.colorCodingView}>
+                        <View style ={styles.colorView}>
+                            <View style ={styles.color}></View>
+                             <Text style ={styles.colorText}> Crime</Text>
+                        </View>
+
+                        <View style ={styles.colorView}>
+                        <View style={[styles.color, { backgroundColor: 'blue' }]} />
+                        <Text style ={styles.colorText}> Rape</Text>
+                        </View>
+
+                        <View style ={styles.colorView}>
+                        <View style={[styles.color, { backgroundColor: 'green' }]} />
+                        <Text style ={styles.colorText}>Snake bite</Text>
+                        </View>
+
+                        <View style ={styles.colorView}>
+                        <View style={[styles.color, { backgroundColor: 'gray' }]} />
+                        <Text style ={styles.colorText}>Theft</Text>
+                        </View>
+
+                        <View style ={styles.colorView}>
+                        <View style={[styles.color, { backgroundColor: 'purple' }]} />
+                        <Text style ={styles.colorText}>Pickpocket</Text>
+                        </View>
+
+                        <View style ={styles.colorView}>
+                        <View style={[styles.color, { backgroundColor: 'orange' }]} />
+                        <Text style ={styles.colorText}>Fire</Text>
+                        </View>
+
+                        <View style ={styles.colorView}>
+                        <View style={[styles.color, { backgroundColor: 'black' }]} />
+                        <Text style ={styles.colorText}>Harassment</Text>
+                        </View>
+                        
+                    </View>
                 {/* Custom marker for user location */}
                 {markerCoords && (
                     <Marker
@@ -629,6 +672,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  colorCodingView:{
+    backgroundColor:'white',
+    height:'auto',
+    width:120,
+    top:'25%',
+    position:'absolute',
+    right:10,
+    padding:12,
+    borderRadius:15,
+    opacity:0.7
+
+  },
+  colorView:{
+    flexDirection:'row',
+    alignItems:'center',
+    gap:5,
+  },
+  color:{backgroundColor:'red', height:10, width:10, borderRadius:5},
+colorText:{    fontFamily:'Montserrat-Regular'},
   errorContainer: {
     position: 'absolute',
     bottom: 20,
