@@ -133,13 +133,7 @@ const LocationPickerModal = ({ visible, onClose, onLocationSelect, initialLocati
             <Ionicons name="close" size={24} color={theme.text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.text }]}>Select Location</Text>
-          <TouchableOpacity 
-            onPress={handleConfirm} 
-            style={[styles.confirmButton, { backgroundColor: theme.primary }]}
-            disabled={!selectedLocation}
-          >
-            <Text style={[styles.confirmButtonText, { color: '#fff' }]}>Confirm</Text>
-          </TouchableOpacity>
+          <View style={styles.headerSpacer} />
         </View>
 
         {/* Map */}
@@ -204,6 +198,19 @@ const LocationPickerModal = ({ visible, onClose, onLocationSelect, initialLocati
           <Text style={[styles.instructionText, { color: theme.text }]}>
             Tap anywhere on the map to select the incident location
           </Text>
+
+          <TouchableOpacity 
+            onPress={handleConfirm} 
+            style={[
+              styles.confirmButton, 
+              { backgroundColor: selectedLocation ? theme.primary : '#ccc' }
+            ]}
+            disabled={!selectedLocation}
+          >
+            <Text style={[styles.confirmButtonText, { color: '#fff' }]}>
+              Confirm Location
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -220,6 +227,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
+    paddingTop: 50, // Add top padding for status bar
     borderBottomWidth: 1,
   },
   closeButton: {
@@ -229,11 +237,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     fontFamily: 'Montserrat-Bold',
+    flex: 1,
+    textAlign: 'center',
+  },
+  headerSpacer: {
+    width: 40, // Same width as close button to center title
   },
   confirmButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: 8,
+    marginTop: 10,
+    alignItems: 'center',
   },
   confirmButtonText: {
     fontSize: 16,
@@ -264,6 +279,7 @@ const styles = StyleSheet.create({
   },
   controls: {
     padding: 20,
+    paddingBottom: 30, // Add extra bottom padding for safe area
     borderTopWidth: 1,
   },
   currentLocationButton: {
