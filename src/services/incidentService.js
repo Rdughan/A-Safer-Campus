@@ -1,5 +1,6 @@
 import { supabase, TABLES, USER_ROLES, INCIDENT_TYPES } from '../config/supabase';
 import { roleService } from './roleService';
+import { locationService } from './locationService';
 
 // Incident Services with Role-Based Access Control
 export const incidentService = {
@@ -30,6 +31,49 @@ export const incidentService = {
       console.log('✅ [incidentService] User authenticated:', user.id);
       console.log('🔐 [incidentService] Current auth.uid():', user.id);
 
+      // Handle location geocoding if location_description is provided
+      let finalLatitude = incidentData.latitude || null;
+      let finalLongitude = incidentData.longitude || null;
+      let finalLocationDescription = incidentData.location_description || '';
+
+      // If we have a location description but no coordinates, try to geocode it
+      if (finalLocationDescription && (finalLatitude === null || finalLongitude === null)) {
+        console.log('🔍 [incidentService] Geocoding location:', finalLocationDescription);
+        
+        try {
+          const geocodedLocation = await locationService.geocodeLocation(finalLocationDescription);
+          
+          if (geocodedLocation) {
+            finalLatitude = geocodedLocation.latitude;
+            finalLongitude = geocodedLocation.longitude;
+            // Update location description with the formatted address if available
+            if (geocodedLocation.address) {
+              finalLocationDescription = geocodedLocation.address;
+            }
+            console.log('✅ [incidentService] Location geocoded successfully:', {
+              original: incidentData.location_description,
+              coordinates: { latitude: finalLatitude, longitude: finalLongitude },
+              formatted: finalLocationDescription
+            });
+          } else {
+            console.log('⚠️ [incidentService] Could not geocode location, using campus coordinates as fallback');
+            // Use campus coordinates as fallback if geocoding fails
+            finalLatitude = 5.6064;
+            finalLongitude = -0.2000;
+          }
+        } catch (geocodeError) {
+          console.error('❌ [incidentService] Geocoding error:', geocodeError);
+          // Use campus coordinates as fallback if geocoding fails
+          finalLatitude = 5.6064;
+          finalLongitude = -0.2000;
+        }
+      } else if (!finalLatitude || !finalLongitude) {
+        // If no location description and no coordinates, use campus coordinates
+        console.log('⚠️ [incidentService] No location or coordinates provided, using campus coordinates');
+        finalLatitude = 5.6064;
+        finalLongitude = -0.2000;
+      }
+
       // Clean and validate the incident data
       const cleanedData = {
         user_id: incidentData.user_id,
@@ -37,15 +81,20 @@ export const incidentService = {
         description: incidentData.description || '',
         incident_type: incidentData.incident_type,
         status: incidentData.status || 'reported',
-        latitude: incidentData.latitude || null,
-        longitude: incidentData.longitude || null,
-        location_description: incidentData.location_description || '',
+        latitude: finalLatitude,
+        longitude: finalLongitude,
+        location_description: finalLocationDescription,
         evidence_files: Array.isArray(incidentData.evidence_files) ? incidentData.evidence_files : [],
         witnesses: Array.isArray(incidentData.witnesses) ? incidentData.witnesses : [],
         reported_at: incidentData.reported_at || new Date().toISOString()
       };
 
       console.log('🧹 [incidentService] Cleaned incident data:', JSON.stringify(cleanedData, null, 2));
+      console.log('🎯 [incidentService] Final coordinates for heatmap:', {
+        latitude: cleanedData.latitude,
+        longitude: cleanedData.longitude,
+        location_description: cleanedData.location_description
+      });
 
       // Attempt to create the incident
       const { data, error } = await supabase

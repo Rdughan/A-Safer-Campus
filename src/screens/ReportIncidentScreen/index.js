@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Switch,TouchableWithoutFeedback,
-  StyleSheet, Image, ScrollView, Platform, Animated, Alert
+  StyleSheet, Image, ScrollView, Platform, Animated, Alert, ActivityIndicator
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as ImagePicker from 'react-native-image-picker';
@@ -10,6 +10,7 @@ import { BlurView } from 'expo-blur';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Location from 'expo-location';
 import { incidentService } from '../../services/incidentService';
+import { locationService } from '../../services/locationService';
 import { INCIDENT_TYPES } from '../../config/supabase';
 import { AuthContext } from '../../context/AuthContext';
 import { debugUtils } from '../../utils/debugUtils';
@@ -40,11 +41,75 @@ export default function ReportIncidentScreen({ navigation }) {
   const [submitting, setSubmitting] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [locationSearchLoading, setLocationSearchLoading] = useState(false);
 
   // Get current location when component mounts
   useEffect(() => {
     getCurrentLocation();
   }, []);
+
+  // Handle location search and suggestions
+  const handleLocationSearch = async (query) => {
+    if (!query || query.trim().length < 2) {
+      setLocationSuggestions([]);
+      setShowLocationSuggestions(false);
+      return;
+    }
+
+    try {
+      setLocationSearchLoading(true);
+      const suggestions = await locationService.getLocationSuggestions(query);
+      setLocationSuggestions(suggestions);
+      setShowLocationSuggestions(suggestions.length > 0);
+    } catch (error) {
+      console.error('Error getting location suggestions:', error);
+      setLocationSuggestions([]);
+      setShowLocationSuggestions(false);
+    } finally {
+      setLocationSearchLoading(false);
+    }
+  };
+
+  // Handle location suggestion selection
+  const handleLocationSuggestionSelect = async (suggestion) => {
+    try {
+      setLocationSearchLoading(true);
+      
+      // If suggestion has coordinates, use them directly
+      if (suggestion.location) {
+        setLocation(suggestion.description || suggestion.address);
+        setCurrentLocation({
+          latitude: suggestion.location.latitude,
+          longitude: suggestion.location.longitude
+        });
+      } else if (suggestion.placeId) {
+        // Get place details for coordinates
+        const placeDetails = await locationService.getPlaceDetails(suggestion.placeId);
+        if (placeDetails) {
+          setLocation(placeDetails.address || suggestion.description);
+          setCurrentLocation({
+            latitude: placeDetails.latitude,
+            longitude: placeDetails.longitude
+          });
+        } else {
+          setLocation(suggestion.description);
+        }
+      } else {
+        setLocation(suggestion.description);
+      }
+      
+      setShowLocationSuggestions(false);
+      setLocationSuggestions([]);
+    } catch (error) {
+      console.error('Error selecting location suggestion:', error);
+      setLocation(suggestion.description);
+      setShowLocationSuggestions(false);
+    } finally {
+      setLocationSearchLoading(false);
+    }
+  };
 
   const getCurrentLocation = async () => {
     try {
@@ -233,8 +298,8 @@ export default function ReportIncidentScreen({ navigation }) {
         description: description || `Incident reported at ${location}`,
         incident_type: incidentType,
         location_description: location,
-        latitude: currentLocation?.latitude || 5.6064, // Fallback to campus coordinates
-        longitude: currentLocation?.longitude || -0.2000, // Fallback to campus coordinates
+        latitude: currentLocation?.latitude || null, // Let the incident service handle geocoding
+        longitude: currentLocation?.longitude || null, // Let the incident service handle geocoding
         reported_at: time.toISOString(),
         evidence_files: media ? [media.uri] : [],
         witnesses: [],
@@ -311,19 +376,22 @@ export default function ReportIncidentScreen({ navigation }) {
     }
   };
 
-  return (
-    <View style={styles.mainContainer}>
-      <View intensity={100} tint="light" style={styles.headerContainer}>
-          
-        <Text style={styles.headerTitle}>Report Incident</Text>
-      </View>
-      
+  // Handle clicking outside to close suggestions
+  const handleOutsidePress = () => {
+    setShowLocationSuggestions(false);
+  };
 
-    <ScrollView style={styles.scrollContainer}> 
-      <View style={styles.toggleRow}>
-        <Text style={styles.label}>Report Anonymously</Text>
-        <Switch value={isAnonymous} onValueChange={setIsAnonymous} />
-      </View>
+  return (
+    <TouchableWithoutFeedback onPress={handleOutsidePress}>
+      <View style={styles.mainContainer}>
+        <View intensity={100} tint="light" style={styles.headerContainer}>
+            
+          <Text style={styles.headerTitle}>Report Incident</Text>
+        </View>
+        
+
+      <ScrollView style={styles.scrollContainer}> 
+     
 
       <TouchableOpacity style={styles.mediaBox} onPress={pickMedia}>
         {media ? (
@@ -368,33 +436,70 @@ export default function ReportIncidentScreen({ navigation }) {
 )}
       <View style={styles.locationInputContainer}>
         <Ionicons 
-          name={locationLoading ? "location-outline" : "location"} 
+          name={locationLoading || locationSearchLoading ? "location-outline" : "location"} 
           size={20} 
-          color={locationLoading ? "#666" : "#239DD6"} 
+          color={locationLoading || locationSearchLoading ? "#666" : "#239DD6"} 
           style={styles.locationIcon}
         />
         <TextInput
           style={styles.locationInput}
-          placeholder={locationLoading ? "Getting your location..." : "Location on Campus"}
+          placeholder={locationLoading ? "Getting your location..." : "Search for location (e.g., Evandy Hostel)"}
           value={location}
-          onChangeText={setLocation}
+          onChangeText={(text) => {
+            setLocation(text);
+            handleLocationSearch(text);
+          }}
+          onFocus={() => {
+            if (locationSuggestions.length > 0) {
+              setShowLocationSuggestions(true);
+            }
+          }}
         />
+        {locationSearchLoading && (
+          <ActivityIndicator size="small" color="#239DD6" style={styles.searchIndicator} />
+        )}
       </View>
+
+      {/* Location Suggestions */}
+      {showLocationSuggestions && locationSuggestions.length > 0 && (
+        <View style={styles.suggestionsContainer}>
+          {locationSuggestions.map((suggestion, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.suggestionItem}
+              onPress={() => handleLocationSuggestionSelect(suggestion)}
+            >
+              <Ionicons name="location-outline" size={16} color="#666" />
+              <View style={styles.suggestionTextContainer}>
+                <Text style={styles.suggestionTitle}>
+                  {suggestion.name || suggestion.description}
+                </Text>
+                {suggestion.address && suggestion.address !== suggestion.description && (
+                  <Text style={styles.suggestionAddress}>{suggestion.address}</Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       {/* Location Status */}
       <View style={styles.locationStatus}>
-        {locationLoading ? (
+        {locationLoading || locationSearchLoading ? (
           <Text style={styles.locationStatusText}>
-            <Ionicons name="location-outline" size={16} color="#666" /> Getting your location...
+            <Ionicons name="location-outline" size={16} color="#666" /> 
+            {locationLoading ? 'Getting your location...' : 'Searching for location...'}
           </Text>
         ) : currentLocation ? (
           <Text style={styles.locationStatusText}>
-            <Ionicons name="checkmark-circle" size={16} color="#4CAF50" /> Location captured and populated
+            <Ionicons name="checkmark-circle" size={16} color="#4CAF50" /> 
+            Location coordinates: {currentLocation.latitude.toFixed(6)}, {currentLocation.longitude.toFixed(6)}
           </Text>
         ) : (
           <View>
             <Text style={styles.locationStatusText}>
-              <Ionicons name="warning" size={16} color="#FF9800" /> Using campus coordinates
+              <Ionicons name="warning" size={16} color="#FF9800" /> 
+              Location will be geocoded when you submit the report
             </Text>
             <TouchableOpacity onPress={getCurrentLocation} style={styles.locationButton}>
               <Text style={styles.locationButtonText}>
@@ -437,10 +542,7 @@ export default function ReportIncidentScreen({ navigation }) {
         onChangeText={setDescription}
       />
 
-      <View style={styles.toggleRow}>
-        <Text style={styles.label}>Send to Authorities</Text>
-        <Switch value={sendToAuthorities} onValueChange={setSendToAuthorities} />
-      </View>
+    
 
       <Animated.View style={{ transform: [{ scale: showSubmitAnimation }] }}>
         <TouchableOpacity 
@@ -456,6 +558,7 @@ export default function ReportIncidentScreen({ navigation }) {
       </Animated.View>
     </ScrollView>
     </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -464,7 +567,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'white',
     padding: 20,
-    marginTop: 100,
+    marginTop: 150,
     paddingBottom:40
     
   },
@@ -668,6 +771,44 @@ doneButtonText: {
     color: 'white',
     fontSize: 15,
     fontFamily: 'Montserrat-Bold',
+  },
+  searchIndicator: {
+    marginLeft: 10,
+  },
+  suggestionsContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    borderColor: '#E5E7EB',
+    borderWidth: 1,
+    marginTop: 5,
+    maxHeight: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  suggestionTextContainer: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  suggestionTitle: {
+    fontSize: 15,
+    color: '#333',
+    fontFamily: 'Montserrat-Regular',
+    marginBottom: 2,
+  },
+  suggestionAddress: {
+    fontSize: 13,
+    color: '#666',
+    fontFamily: 'Montserrat-Regular',
   },
   debugButton: {
     backgroundColor: '#FFD700', // Gold color for debug

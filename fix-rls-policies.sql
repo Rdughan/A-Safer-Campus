@@ -1,50 +1,54 @@
--- Fix for infinite recursion in RLS policies
--- Run this in your Supabase SQL Editor
-
--- Drop the problematic policies
-DROP POLICY IF EXISTS "Management can view all users" ON public.users;
-DROP POLICY IF EXISTS "Management can view all roles" ON public.user_roles;
+-- Fix RLS policies to ensure students can see some incidents
 DROP POLICY IF EXISTS "Users can view incidents based on role" ON public.incidents;
-DROP POLICY IF EXISTS "Management can update all incidents" ON public.incidents;
-DROP POLICY IF EXISTS "Management can view all access logs" ON public.incident_access_logs;
 
--- Create simplified policies that avoid circular references
-CREATE POLICY "Management can view all users" ON public.users
-    FOR SELECT USING (
-        (SELECT role FROM public.users WHERE id = auth.uid()) IN ('school_management', 'admin')
-    );
-
-CREATE POLICY "Management can view all roles" ON public.user_roles
-    FOR SELECT USING (
-        (SELECT role FROM public.users WHERE id = auth.uid()) IN ('school_management', 'admin')
-    );
-
--- Simplified incident access policy
+-- Create improved RLS policy
 CREATE POLICY "Users can view incidents based on role" ON public.incidents
-    FOR SELECT USING (
-        -- Users can always view their own incidents
-        auth.uid() = user_id
-        OR
-        -- School management and admin can view all incidents
-        (SELECT role FROM public.users WHERE id = auth.uid()) IN ('school_management', 'admin')
-        OR
-        -- Institution-specific access based on incident type
-        EXISTS (
-            SELECT 1 FROM public.incident_institution_mapping im
-            WHERE im.incident_type = incidents.incident_type
-            AND im.institution_role = (SELECT role FROM public.users WHERE id = auth.uid())
-        )
-        OR
-        -- Assigned incidents
-        auth.uid() = assigned_to
-    );
+FOR SELECT USING (
+    -- Users can always view their own incidents
+    auth.uid() = user_id
+    OR
+    -- School management and admin can view all incidents
+    EXISTS (
+        SELECT 1 FROM public.users 
+        WHERE id = auth.uid() 
+        AND role IN ('school_management', 'admin')
+    )
+    OR
+    -- Institution-specific access based on incident type
+    EXISTS (
+        SELECT 1 FROM public.incident_institution_mapping iim
+        JOIN public.users u ON u.id = auth.uid()
+        WHERE iim.incident_type = incidents.incident_type
+        AND iim.institution_role = u.role
+    )
+    OR
+    -- Students can view public safety incidents (snake bite, fire, pickpocketing)
+    EXISTS (
+        SELECT 1 FROM public.users 
+        WHERE id = auth.uid() 
+        AND role = 'student'
+        AND incidents.incident_type IN ('snake_bite', 'fire_attack', 'pickpocketing')
+    )
+);
 
-CREATE POLICY "Management can update all incidents" ON public.incidents
-    FOR UPDATE USING (
-        (SELECT role FROM public.users WHERE id = auth.uid()) IN ('school_management', 'admin')
-    );
-
-CREATE POLICY "Management can view all access logs" ON public.incident_access_logs
-    FOR SELECT USING (
-        (SELECT role FROM public.users WHERE id = auth.uid()) IN ('school_management', 'admin')
-    ); 
+-- Ensure incident institution mappings exist
+INSERT INTO public.incident_institution_mapping (incident_type, institution_role, priority, auto_notify) VALUES
+('snake_bite', 'medical_service', 'urgent', true),
+('snake_bite', 'school_management', 'high', true),
+('fire_attack', 'fire_service', 'urgent', true),
+('fire_attack', 'school_management', 'urgent', true),
+('pickpocketing', 'security', 'medium', true),
+('pickpocketing', 'school_management', 'medium', true),
+('theft', 'security', 'medium', true),
+('theft', 'school_management', 'medium', true),
+('assault', 'security', 'high', true),
+('assault', 'medical_service', 'high', true),
+('assault', 'school_management', 'high', true),
+('harassment', 'security', 'medium', true),
+('harassment', 'school_management', 'medium', true),
+('vandalism', 'security', 'medium', true),
+('vandalism', 'school_management', 'medium', true),
+('medical', 'medical_service', 'high', true),
+('medical', 'school_management', 'high', true),
+('other', 'school_management', 'medium', true)
+ON CONFLICT (incident_type, institution_role) DO NOTHING;

@@ -66,3 +66,4 @@ const DASHBOARD_CONFIG = {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { SUPABASE_CONFIG, DASHBOARD_CONFIG };
 }
+

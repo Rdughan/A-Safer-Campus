@@ -22,3 +22,4 @@ console.log(placesUrl);
 
 console.log('\nCopy these URLs to your browser to test if the API key works.');
 console.log('If you see maps/images, the API key is working correctly.');
+

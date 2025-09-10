@@ -169,3 +169,4 @@ severityScores: {
 ## Support
 
 For technical support or feature requests, please refer to the main project documentation or create an issue in the project repository.
+

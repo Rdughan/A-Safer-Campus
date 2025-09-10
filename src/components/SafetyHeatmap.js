@@ -116,6 +116,15 @@ const SafetyHeatmap = forwardRef(
 
         console.log("Incidents with valid coordinates:", validIncidents.length);
         console.log("Sample incident data:", validIncidents[0]);
+        
+        // Debug: Log all incident coordinates
+        validIncidents.forEach((incident, index) => {
+          console.log(`📍 Incident ${index + 1}:`, {
+            location: incident.location_description,
+            coordinates: `${incident.latitude}, ${incident.longitude}`,
+            type: incident.incident_type
+          });
+        });
 
         // Apply time filter if specified
         let filteredIncidents = validIncidents;
@@ -172,12 +181,19 @@ const SafetyHeatmap = forwardRef(
       fetchIncidents();
     }, [timeFilter, user]);
 
-    // Convert incidents to heatmap points
-    const heatmapPoints = incidents.map((incident) => ({
-      latitude: incident.latitude,
-      longitude: incident.longitude,
-      weight: getIncidentWeight(incident.incident_type), // Weight based on incident severity
-    }));
+    // Convert incidents to heatmap points with exact coordinates
+    const heatmapPoints = incidents.map((incident) => {
+      const point = {
+        latitude: parseFloat(incident.latitude), // Ensure exact precision
+        longitude: parseFloat(incident.longitude), // Ensure exact precision
+        weight: getIncidentWeight(incident.incident_type), // Weight based on incident severity
+      };
+      
+      // Debug: Log each heatmap point for verification
+      console.log(`🔥 Heatmap Point: ${incident.location_description} -> ${point.latitude}, ${point.longitude} (weight: ${point.weight})`);
+      
+      return point;
+    });
 
     // Get weight based on incident type severity
     const getIncidentWeight = (incidentType) => {

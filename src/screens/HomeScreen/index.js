@@ -18,6 +18,7 @@ import * as Location from "expo-location";
 import { useNavigation } from "@react-navigation/native";
 import { incidentService } from "../../services/incidentService";
 import { MAPS_CONFIG } from "../../config/maps";
+import { supabase } from "../../config/supabase";
 import LocationDetailModal from "../../components/LocationDetailModal";
 
 const HomeScreen = ({ route }) => {
@@ -66,6 +67,35 @@ const HomeScreen = ({ route }) => {
     console.log("🔧 [DEBUG] Platform:", Platform.OS);
     console.log("🔧 [DEBUG] Map Region:", mapRegion);
     
+    // Debug user authentication and role
+    (async () => {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) {
+          console.error("❌ [DEBUG] Auth error:", authError);
+        } else if (user) {
+          console.log("✅ [DEBUG] User authenticated:", user.id);
+          
+          // Check user role
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('role, username, student_id')
+            .eq('id', user.id)
+            .single();
+          
+          if (userError) {
+            console.error("❌ [DEBUG] User data error:", userError);
+          } else {
+            console.log("✅ [DEBUG] User data:", userData);
+          }
+        } else {
+          console.log("❌ [DEBUG] No user authenticated");
+        }
+      } catch (error) {
+        console.error("❌ [DEBUG] Auth check error:", error);
+      }
+    })();
+    
     (async () => {
       // Request permission
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -113,8 +143,8 @@ const HomeScreen = ({ route }) => {
     try {
       setLoading(true);
 
-      // Use the regular getIncidents function which respects RLS policies
-      const { data, error } = await incidentService.getIncidents();
+      // Use getAllIncidentsForHeatmap to get all incidents for heatmap display
+      const { data, error } = await incidentService.getAllIncidentsForHeatmap();
 
       if (error) {
         console.error("Error fetching incidents:", error);
@@ -211,12 +241,19 @@ const HomeScreen = ({ route }) => {
     return weights[incidentType] || 0.5;
   };
 
-  // Convert incidents to heatmap points
-  const heatmapPoints = incidents.map((incident) => ({
-    latitude: incident.latitude,
-    longitude: incident.longitude,
-    weight: getIncidentWeight(incident.incident_type),
-  }));
+  // Convert incidents to heatmap points with exact coordinates
+  const heatmapPoints = incidents.map((incident) => {
+    const point = {
+      latitude: parseFloat(incident.latitude), // Ensure exact precision
+      longitude: parseFloat(incident.longitude), // Ensure exact precision
+      weight: getIncidentWeight(incident.incident_type),
+    };
+    
+    // Debug: Log each heatmap point for verification
+    console.log(`🔥 HomeScreen Heatmap Point: ${incident.location_description} -> ${point.latitude}, ${point.longitude} (weight: ${point.weight})`);
+    
+    return point;
+  });
 
   // Center map on user location
   const centerOnUserLocation = async () => {
@@ -279,17 +316,19 @@ const HomeScreen = ({ route }) => {
     try {
       setLoading(true);
       let allResults = [];
-      
+
       // First, try Places API for businesses and points of interest
       try {
         const placesResponse = await fetch(
-          `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${MAPS_CONFIG.apiKey}`
+          `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
+            query
+          )}&key=${MAPS_CONFIG.apiKey}`
         );
-        
+
         const placesData = await placesResponse.json();
-        
-        if (placesData.status === 'OK' && placesData.results.length > 0) {
-          const placesResults = placesData.results.map(result => ({
+
+        if (placesData.status === "OK" && placesData.results.length > 0) {
+          const placesResults = placesData.results.map((result) => ({
             address: result.formatted_address,
             name: result.name,
             location: {
@@ -297,24 +336,26 @@ const HomeScreen = ({ route }) => {
               longitude: result.geometry.location.lng,
             },
             placeId: result.place_id,
-            type: 'place'
+            type: "place",
           }));
           allResults = [...allResults, ...placesResults];
         }
       } catch (placesError) {
-        console.log('Places API error:', placesError);
+        console.log("Places API error:", placesError);
       }
-      
+
       // Then, try Geocoding API for addresses and locations
       try {
         const geocodeResponse = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${MAPS_CONFIG.apiKey}`
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+            query
+          )}&key=${MAPS_CONFIG.apiKey}`
         );
-        
+
         const geocodeData = await geocodeResponse.json();
-        
-        if (geocodeData.status === 'OK' && geocodeData.results.length > 0) {
-          const geocodeResults = geocodeData.results.map(result => ({
+
+        if (geocodeData.status === "OK" && geocodeData.results.length > 0) {
+          const geocodeResults = geocodeData.results.map((result) => ({
             address: result.formatted_address,
             name: result.formatted_address,
             location: {
@@ -322,19 +363,20 @@ const HomeScreen = ({ route }) => {
               longitude: result.geometry.location.lng,
             },
             placeId: result.place_id,
-            type: 'address'
+            type: "address",
           }));
           allResults = [...allResults, ...geocodeResults];
         }
       } catch (geocodeError) {
-        console.log('Geocoding API error:', geocodeError);
+        console.log("Geocoding API error:", geocodeError);
       }
-      
+
       // Remove duplicates based on place_id
-      const uniqueResults = allResults.filter((result, index, self) => 
-        index === self.findIndex(r => r.placeId === result.placeId)
+      const uniqueResults = allResults.filter(
+        (result, index, self) =>
+          index === self.findIndex((r) => r.placeId === result.placeId)
       );
-      
+
       if (uniqueResults.length > 0) {
         setSearchResults(uniqueResults.slice(0, 10)); // Limit to 10 results
         setShowSearchResults(true);
@@ -342,13 +384,15 @@ const HomeScreen = ({ route }) => {
         // If no results, try with location context (e.g., "hostels in Accra")
         const contextualQuery = `${query} in Ghana`;
         const fallbackResponse = await fetch(
-          `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(contextualQuery)}&key=${MAPS_CONFIG.apiKey}`
+          `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
+            contextualQuery
+          )}&key=${MAPS_CONFIG.apiKey}`
         );
-        
+
         const fallbackData = await fallbackResponse.json();
-        
-        if (fallbackData.status === 'OK' && fallbackData.results.length > 0) {
-          const fallbackResults = fallbackData.results.map(result => ({
+
+        if (fallbackData.status === "OK" && fallbackData.results.length > 0) {
+          const fallbackResults = fallbackData.results.map((result) => ({
             address: result.formatted_address,
             name: result.name,
             location: {
@@ -356,20 +400,26 @@ const HomeScreen = ({ route }) => {
               longitude: result.geometry.location.lng,
             },
             placeId: result.place_id,
-            type: 'place'
+            type: "place",
           }));
-          
+
           setSearchResults(fallbackResults.slice(0, 10));
           setShowSearchResults(true);
         } else {
-          Alert.alert('No Results', `No places found for "${query}". Try searching for specific locations like "hostels in Accra" or "University of Ghana".`);
+          Alert.alert(
+            "No Results",
+            `No places found for "${query}". Try searching for specific locations like "hostels in Accra" or "University of Ghana".`
+          );
           setSearchResults([]);
           setShowSearchResults(false);
         }
       }
     } catch (error) {
-      console.error('Search error:', error);
-      Alert.alert('Search Error', 'Could not search for places. Please check your internet connection and try again.');
+      console.error("Search error:", error);
+      Alert.alert(
+        "Search Error",
+        "Could not search for places. Please check your internet connection and try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -378,22 +428,23 @@ const HomeScreen = ({ route }) => {
   // Zoom to selected search result
   const zoomToSearchResult = (result) => {
     console.log("🎯 Zooming to search result:", result);
-    
+
     // Determine zoom level based on result type and search query
     let latitudeDelta, longitudeDelta;
-    
+
     // Check if this is a hostel or accommodation search
-    const isHostelSearch = searchQuery.toLowerCase().includes('hostel') || 
-                          searchQuery.toLowerCase().includes('accommodation') ||
-                          result.name?.toLowerCase().includes('hostel') ||
-                          result.address?.toLowerCase().includes('hostel');
-    
+    const isHostelSearch =
+      searchQuery.toLowerCase().includes("hostel") ||
+      searchQuery.toLowerCase().includes("accommodation") ||
+      result.name?.toLowerCase().includes("hostel") ||
+      result.address?.toLowerCase().includes("hostel");
+
     if (isHostelSearch) {
       // For hostels, zoom in very close
       latitudeDelta = 0.002;
       longitudeDelta = 0.002;
       console.log("🏠 Hostel detected - using close zoom");
-    } else if (result.type === 'place') {
+    } else if (result.type === "place") {
       // For other businesses, zoom in closer
       latitudeDelta = 0.005;
       longitudeDelta = 0.005;
@@ -404,23 +455,28 @@ const HomeScreen = ({ route }) => {
       longitudeDelta = 0.01;
       console.log("📍 Address detected - using standard zoom");
     }
-    
+
     const newRegion = {
       latitude: result.location.latitude,
       longitude: result.location.longitude,
       latitudeDelta: latitudeDelta,
       longitudeDelta: longitudeDelta,
     };
-    
+
     console.log("📍 New region:", newRegion);
     console.log("🗺️ MapRef current:", mapRef.current);
-    console.log("🔍 Zoom level - latDelta:", latitudeDelta, "lngDelta:", longitudeDelta);
-    
+    console.log(
+      "🔍 Zoom level - latDelta:",
+      latitudeDelta,
+      "lngDelta:",
+      longitudeDelta
+    );
+
     setMapRegion(newRegion);
     setSearchQuery(result.name || result.address);
     setShowSearchResults(false);
     setSelectedSearchResult(result);
-    
+
     // Animate to the new location with a small delay to ensure map is ready
     setTimeout(() => {
       if (mapRef.current) {
@@ -508,17 +564,24 @@ const HomeScreen = ({ route }) => {
       {/* Search Results Dropdown */}
       {showSearchResults && searchResults.length > 0 && (
         <View style={styles.searchResultsContainer}>
-          <ScrollView style={styles.searchResultsList} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.searchResultsList}
+            showsVerticalScrollIndicator={false}
+          >
             {searchResults.map((result, index) => (
               <TouchableOpacity
                 key={index}
                 style={styles.searchResultItem}
                 onPress={() => zoomToSearchResult(result)}
               >
-                <Icon 
-                  name={result.type === 'place' ? "business-outline" : "location-outline"} 
-                  size={20} 
-                  color="#666" 
+                <Icon
+                  name={
+                    result.type === "place"
+                      ? "business-outline"
+                      : "location-outline"
+                  }
+                  size={20}
+                  color="#666"
                 />
                 <View style={styles.searchResultTextContainer}>
                   {result.name && result.name !== result.address && (
@@ -532,38 +595,38 @@ const HomeScreen = ({ route }) => {
         </View>
       )}
 
-       <MapView
-         ref={mapRef}
-         style={styles.map}
-         region={mapRegion}
-         provider={PROVIDER_GOOGLE}
-         mapType="standard"
-         onPress={() => {
-           setShowSearchResults(false);
-           setSelectedSearchResult(null);
-         }}
-         onMapReady={() => {
-           console.log("✅ Map is ready!");
-           console.log("📍 Map region:", mapRegion);
-           console.log("🗺️ Map type: standard");
-           console.log("🔑 API Key configured:", !!MAPS_CONFIG.apiKey);
-           setMapLoading(false);
-         }}
-         onMapLoaded={() => {
-           console.log("✅ Map loaded successfully!");
-           console.log("🌍 Map tiles should now be visible");
-           setMapLoading(false);
-         }}
-         onError={(error) => {
-           console.error("❌ Map error:", error);
-           setMapError(error.message || "Map failed to load");
-           setMapLoading(false);
-           Alert.alert(
-             "Map Error",
-             `Map failed to load. This might be due to:\n\n1. Internet connection issues\n2. Google Maps API key configuration\n3. API quota exceeded\n\nError: ${error.message}`
-           );
-         }}
-       >
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        region={mapRegion}
+        provider={PROVIDER_GOOGLE}
+        mapType="standard"
+        onPress={() => {
+          setShowSearchResults(false);
+          setSelectedSearchResult(null);
+        }}
+        onMapReady={() => {
+          console.log("✅ Map is ready!");
+          console.log("📍 Map region:", mapRegion);
+          console.log("🗺️ Map type: standard");
+          console.log("🔑 API Key configured:", !!MAPS_CONFIG.apiKey);
+          setMapLoading(false);
+        }}
+        onMapLoaded={() => {
+          console.log("✅ Map loaded successfully!");
+          console.log("🌍 Map tiles should now be visible");
+          setMapLoading(false);
+        }}
+        onError={(error) => {
+          console.error("❌ Map error:", error);
+          setMapError(error.message || "Map failed to load");
+          setMapLoading(false);
+          Alert.alert(
+            "Map Error",
+            `Map failed to load. This might be due to:\n\n1. Internet connection issues\n2. Google Maps API key configuration\n3. API quota exceeded\n\nError: ${error.message}`
+          );
+        }}
+      >
         {/* Custom marker for user location */}
         {markerCoords && (
           <Marker
@@ -619,13 +682,15 @@ const HomeScreen = ({ route }) => {
             }}
           />
         )}
-       </MapView>
+      </MapView>
 
       {/* Loading Overlay */}
       {mapLoading && (
         <View style={styles.mapLoadingOverlay}>
           <Text style={styles.mapLoadingText}>Loading map...</Text>
-          <Text style={styles.mapLoadingSubtext}>If map doesn't load, check your internet connection</Text>
+          <Text style={styles.mapLoadingSubtext}>
+            If map doesn't load, check your internet connection
+          </Text>
         </View>
       )}
 
@@ -634,7 +699,9 @@ const HomeScreen = ({ route }) => {
         <View style={styles.mapErrorOverlay}>
           <Icon name="warning" size={24} color="#ff6b6b" />
           <Text style={styles.mapErrorText}>Map Tiles Not Loading</Text>
-          <Text style={styles.mapErrorSubtext}>Check Google Cloud Console API settings</Text>
+          <Text style={styles.mapErrorSubtext}>
+            Check Google Cloud Console API settings
+          </Text>
         </View>
       )}
 
