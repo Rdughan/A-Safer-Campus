@@ -165,11 +165,11 @@ export default function RoleBasedDashboard({ navigation }) {
   const calculateStats = (incidents) => {
     const total = incidents.length;
     const reported = incidents.filter(i => i.status === 'reported').length;
-    const inProgress = incidents.filter(i => i.status === 'in_progress').length;
-    const resolved = incidents.filter(i => i.status === 'resolved').length;
+    // const inProgress = incidents.filter(i => i.status === 'in_progress').length;
+    // const resolved = incidents.filter(i => i.status === 'resolved').length;
     const urgent = incidents.filter(i => i.status === 'urgent').length;
 
-    return { total, reported, inProgress, resolved, urgent };
+    return { total, reported, urgent };
   };
 
   const onRefresh = async () => {
@@ -321,8 +321,8 @@ export default function RoleBasedDashboard({ navigation }) {
           <View style={styles.statsGrid}>
             {renderStatsCard('Total', stats.total, 'list-outline', getRoleColor(userRole))}
             {renderStatsCard('Reported', stats.reported, 'document-text-outline', '#FF9800')}
-            {renderStatsCard('In Progress', stats.inProgress, 'time-outline', '#239DD6')}
-            {renderStatsCard('Resolved', stats.resolved, 'checkmark-circle-outline', '#239DD6')}
+            {/* {renderStatsCard('In Progress', stats.inProgress, 'time-outline', '#239DD6')} */}
+            {/* {renderStatsCard('Resolved', stats.resolved, 'checkmark-circle-outline', '#239DD6')} */}
           </View>
         </View>
 

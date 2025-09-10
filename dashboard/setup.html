@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safer Campus Dashboard - Setup</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .step {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-left: 4px solid #3498db;
+            background: #f8f9fa;
+        }
+        .step h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        input[type="text"], input[type="url"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus, input[type="url"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        .btn {
+            background: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #2980b9;
+        }
+        .btn-success {
+            background: #27ae60;
+        }
+        .btn-success:hover {
+            background: #229954;
+        }
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #c3e6cb;
+            margin: 20px 0;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #f5c6cb;
+            margin: 20px 0;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ Safer Campus Dashboard Setup</h1>
+        
+        <div class="step">
+            <h3>Step 1: Get Your Supabase Credentials</h3>
+            <p>Go to your Supabase project dashboard and navigate to <strong>Settings → API</strong> to get your credentials.</p>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Enter Your Supabase Configuration</h3>
+            <form id="configForm">
+                <div class="form-group">
+                    <label for="supabaseUrl">Supabase Project URL:</label>
+                    <input type="url" id="supabaseUrl" placeholder="https://your-project-id.supabase.co" required>
+                </div>
+                <div class="form-group">
+                    <label for="supabaseKey">Supabase Anon Key:</label>
+                    <input type="text" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required>
+                </div>
+                <button type="submit" class="btn">Generate Configuration</button>
+            </form>
+        </div>
+
+        <div id="configResult" class="hidden">
+            <div class="step">
+                <h3>Step 3: Configuration Generated</h3>
+                <div class="success">
+                    ✅ Configuration has been generated successfully! Copy the code below and replace the content in your <code>config.js</code> file.
+                </div>
+                <div class="code-block" id="generatedConfig"></div>
+                <button class="btn btn-success" onclick="copyConfig()">📋 Copy Configuration</button>
+            </div>
+
+            <div class="step">
+                <h3>Step 4: Test Your Connection</h3>
+                <p>Click the button below to test if your Supabase connection is working correctly.</p>
+                <button class="btn" onclick="testConnection()">🔗 Test Connection</button>
+                <div id="connectionResult"></div>
+            </div>
+
+            <div class="step">
+                <h3>Step 5: Launch Dashboard</h3>
+                <p>Once your connection is working, you can launch the dashboard.</p>
+                <button class="btn btn-success" onclick="launchDashboard()">🚀 Launch Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('configForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const url = document.getElementById('supabaseUrl').value;
+            const key = document.getElementById('supabaseKey').value;
+            
+            if (!url || !key) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            const config = `// Supabase Configuration
+const SUPABASE_CONFIG = {
+    url: '${url}',
+    anonKey: '${key}'
+};
+
+// Dashboard Configuration
+const DASHBOARD_CONFIG = {
+    refreshInterval: 5 * 60 * 1000,
+    recentIncidentsLimit: 10,
+    topLocationsLimit: 5,
+    timelineDays: 30,
+    responseTimeRanges: [
+        { label: '0-15 min', min: 0, max: 15 },
+        { label: '15-30 min', min: 15, max: 30 },
+        { label: '30-60 min', min: 30, max: 60 },
+        { label: '1-2 hours', min: 60, max: 120 },
+        { label: '2+ hours', min: 120, max: Infinity }
+    ],
+    incidentColors: {
+        'snake_bite': '#e74c3c',
+        'fire_attack': '#e67e22',
+        'assault': '#8e44ad',
+        'medical': '#3498db',
+        'theft': '#f39c12',
+        'harassment': '#e91e63',
+        'vandalism': '#795548',
+        'pickpocketing': '#607d8b',
+        'other': '#9e9e9e'
+    },
+    severityScores: {
+        'snake_bite': 10,
+        'fire_attack': 10,
+        'assault': 9,
+        'medical': 8,
+        'theft': 6,
+        'harassment': 7,
+        'vandalism': 5,
+        'pickpocketing': 4,
+        'other': 3
+    }
+};`;
+            
+            document.getElementById('generatedConfig').textContent = config;
+            document.getElementById('configResult').classList.remove('hidden');
+            
+            // Store config for testing
+            window.supabaseConfig = { url, key };
+        });
+        
+        function copyConfig() {
+            const configText = document.getElementById('generatedConfig').textContent;
+            navigator.clipboard.writeText(configText).then(() => {
+                alert('Configuration copied to clipboard!');
+            });
+        }
+        
+        async function testConnection() {
+            const resultDiv = document.getElementById('connectionResult');
+            resultDiv.innerHTML = '<p>Testing connection...</p>';
+            
+            try {
+                // Test basic connection
+                const response = await fetch(`${window.supabaseConfig.url}/rest/v1/`, {
+                    headers: {
+                        'apikey': window.supabaseConfig.key,
+                        'Authorization': `Bearer ${window.supabaseConfig.key}`
+                    }
+                });
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = '<div class="success">✅ Connection successful! Your Supabase credentials are working correctly.</div>';
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ Connection failed. Please check your credentials and try again.</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">❌ Connection error: ' + error.message + '</div>';
+            }
+        }
+        
+        function launchDashboard() {
+            // Update the main dashboard with the configuration
+            const script = document.createElement('script');
+            script.textContent = `
+                const SUPABASE_URL = '${window.supabaseConfig.url}';
+                const SUPABASE_ANON_KEY = '${window.supabaseConfig.key}';
+            `;
+            document.head.appendChild(script);
+            
+            // Open dashboard in new window
+            window.open('index.html', '_blank');
+        }
+    </script>
+</body>
+</html>

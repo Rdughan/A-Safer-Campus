@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safer Campus - Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .stat-change {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .positive { color: #27ae60; }
+        .negative { color: #e74c3c; }
+        .neutral { color: #f39c12; }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .chart {
+            position: relative;
+            height: 300px;
+        }
+
+        .recent-incidents {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .incident-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 10px;
+            border-left: 4px solid;
+        }
+
+        .incident-type {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .incident-time {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+
+        .incident-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-reported { background: #ffeaa7; color: #d63031; }
+        .status-investigating { background: #74b9ff; color: #0984e3; }
+        .status-resolved { background: #55efc4; color: #00b894; }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .refresh-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 20px auto;
+            display: block;
+            transition: background 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #2980b9;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                padding: 10px;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .stat-number {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>🧠 Safer Campus Intelligence</h1>
+            <p>Transforming campus safety through data-driven prevention and foresight</p>
+        </div>
+
+        <button class="refresh-btn" onclick="loadDashboard()">🔄 Refresh Data</button>
+
+        <div id="loading" class="loading">
+            <h3>Loading dashboard data...</h3>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="dashboard-content" style="display: none;">
+            <!-- Intelligence Metrics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="risk-patterns">-</div>
+                    <div class="stat-label">Risk Patterns Identified</div>
+                    <div class="stat-change" id="patterns-change">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="prevention-score">-</div>
+                    <div class="stat-label">Prevention Effectiveness</div>
+                    <div class="stat-change" id="prevention-change">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="predictive-accuracy">-</div>
+                    <div class="stat-label">Predictive Accuracy</div>
+                    <div class="stat-change" id="accuracy-change">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="safety-intelligence">-</div>
+                    <div class="stat-label">Safety Intelligence Score</div>
+                    <div class="stat-change" id="intelligence-change">-</div>
+                </div>
+            </div>
+
+            <!-- Intelligence Visualizations -->
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">Risk Pattern Analysis</div>
+                    <div class="chart">
+                        <canvas id="riskPatternChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Predictive Safety Trends</div>
+                    <div class="chart">
+                        <canvas id="predictiveChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Prevention Impact Analysis</div>
+                    <div class="chart">
+                        <canvas id="preventionChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Safety Intelligence Heatmap</div>
+                    <div class="chart">
+                        <canvas id="intelligenceHeatmap"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Intelligence Insights -->
+            <div class="recent-incidents">
+                <div class="chart-title">🧠 Safety Intelligence Insights</div>
+                <div id="intelligence-insights"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Chart instances
+        let riskPatternChart, predictiveChart, preventionChart, intelligenceHeatmap;
+
+        // Load dashboard data
+        async function loadDashboard() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'none';
+
+                // Fetch all data in parallel
+                const [incidents, users, accessLogs] = await Promise.all([
+                    fetchIncidents(),
+                    fetchUsers(),
+                    fetchAccessLogs()
+                ]);
+
+                // Process and display data
+                processIntelligenceData(incidents);
+                updateIntelligenceMetrics(incidents, users, accessLogs);
+                createIntelligenceCharts(incidents);
+                displayIntelligenceInsights(incidents);
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = 'Error loading dashboard: ' + error.message;
+            }
+        }
+
+        // Fetch incidents from Supabase
+        async function fetchIncidents() {
+            const { data, error } = await supabase
+                .from('incidents')
+                .select('*')
+                .order('reported_at', { ascending: false });
+            
+            if (error) throw error;
+            return data || [];
+        }
+
+        // Fetch users from Supabase
+        async function fetchUsers() {
+            const { data, error } = await supabase
+                .from('users')
+                .select('*');
+            
+            if (error) throw error;
+            return data || [];
+        }
+
+        // Fetch access logs from Supabase
+        async function fetchAccessLogs() {
+            const { data, error } = await supabase
+                .from('incident_access_logs')
+                .select('*')
+                .order('accessed_at', { ascending: false });
+            
+            if (error) throw error;
+            return data || [];
+        }
+
+        // Process incident data for intelligence analysis
+        function processIntelligenceData(incidents) {
+            // Add computed intelligence fields
+            incidents.forEach(incident => {
+                incident.responseTime = calculateResponseTime(incident);
+                incident.severity = getSeverityScore(incident);
+                incident.timeOfDay = new Date(incident.reported_at).getHours();
+                incident.dayOfWeek = new Date(incident.reported_at).getDay();
+                incident.riskLevel = calculateRiskLevel(incident);
+                incident.preventionPotential = calculatePreventionPotential(incident);
+                incident.patternScore = calculatePatternScore(incident);
+            });
+        }
+
+        // Calculate response time
+        function calculateResponseTime(incident) {
+            if (!incident.assigned_at || !incident.reported_at) return null;
+            const reported = new Date(incident.reported_at);
+            const assigned = new Date(incident.assigned_at);
+            return Math.round((assigned - reported) / (1000 * 60)); // minutes
+        }
+
+        // Get severity score
+        function getSeverityScore(incident) {
+            const severityMap = {
+                'snake_bite': 10,
+                'fire_attack': 10,
+                'assault': 9,
+                'medical': 8,
+                'theft': 6,
+                'harassment': 7,
+                'vandalism': 5,
+                'pickpocketing': 4,
+                'other': 3
+            };
+            return severityMap[incident.incident_type] || 3;
+        }
+
+        // Calculate risk level for intelligence
+        function calculateRiskLevel(incident) {
+            const baseRisk = getSeverityScore(incident);
+            const timeRisk = incident.timeOfDay >= 18 || incident.timeOfDay <= 6 ? 1.5 : 1.0;
+            const dayRisk = incident.dayOfWeek === 0 || incident.dayOfWeek === 6 ? 1.2 : 1.0;
+            return Math.min(10, baseRisk * timeRisk * dayRisk);
+        }
+
+        // Calculate prevention potential
+        function calculatePreventionPotential(incident) {
+            const preventionMap = {
+                'snake_bite': 0.8,    // High prevention potential with awareness
+                'fire_attack': 0.9,   // Very high with proper systems
+                'assault': 0.7,       // Medium with security presence
+                'medical': 0.6,       // Lower, mostly reactive
+                'theft': 0.8,         // High with surveillance
+                'harassment': 0.7,    // Medium with awareness
+                'vandalism': 0.8,     // High with monitoring
+                'pickpocketing': 0.8, // High with awareness
+                'other': 0.5          // Variable
+            };
+            return preventionMap[incident.incident_type] || 0.5;
+        }
+
+        // Calculate pattern score
+        function calculatePatternScore(incident) {
+            // This would be calculated based on historical patterns
+            // For demo purposes, we'll use a simple calculation
+            const locationScore = incident.location_description ? 0.7 : 0.3;
+            const timeScore = incident.timeOfDay ? 0.8 : 0.2;
+            const typeScore = incident.incident_type ? 0.9 : 0.1;
+            return (locationScore + timeScore + typeScore) / 3;
+        }
+
+        // Update intelligence metrics
+        function updateIntelligenceMetrics(incidents, users, accessLogs) {
+            const riskPatterns = calculateRiskPatterns(incidents);
+            const preventionScore = calculatePreventionScore(incidents);
+            const predictiveAccuracy = calculatePredictiveAccuracy(incidents);
+            const intelligenceScore = calculateIntelligenceScore(incidents);
+
+            document.getElementById('risk-patterns').textContent = riskPatterns;
+            document.getElementById('prevention-score').textContent = `${preventionScore}%`;
+            document.getElementById('predictive-accuracy').textContent = `${predictiveAccuracy}%`;
+            document.getElementById('safety-intelligence').textContent = intelligenceScore;
+
+            // Calculate changes (mock data for demo)
+            document.getElementById('patterns-change').textContent = '+3 new patterns identified';
+            document.getElementById('patterns-change').className = 'stat-change positive';
+            document.getElementById('prevention-change').textContent = '+12% effectiveness';
+            document.getElementById('prevention-change').className = 'stat-change positive';
+            document.getElementById('accuracy-change').textContent = '+8% accuracy';
+            document.getElementById('accuracy-change').className = 'stat-change positive';
+            document.getElementById('intelligence-change').textContent = '+15% intelligence';
+            document.getElementById('intelligence-change').className = 'stat-change positive';
+        }
+
+        // Calculate average response time
+        function calculateAverageResponseTime(incidents) {
+            const responseTimes = incidents
+                .map(i => i.responseTime)
+                .filter(t => t !== null);
+            
+            if (responseTimes.length === 0) return null;
+            return Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length);
+        }
+
+        // Calculate risk patterns identified
+        function calculateRiskPatterns(incidents) {
+            if (incidents.length === 0) return 0;
+            
+            // Count unique patterns (location + time + type combinations)
+            const patterns = new Set();
+            incidents.forEach(incident => {
+                const pattern = `${incident.location_description}_${incident.timeOfDay}_${incident.incident_type}`;
+                patterns.add(pattern);
+            });
+            
+            return patterns.size;
+        }
+
+        // Calculate prevention effectiveness score
+        function calculatePreventionScore(incidents) {
+            if (incidents.length === 0) return 100;
+            
+            const avgPreventionPotential = incidents.reduce((sum, i) => sum + i.preventionPotential, 0) / incidents.length;
+            return Math.round(avgPreventionPotential * 100);
+        }
+
+        // Calculate predictive accuracy (mock for demo)
+        function calculatePredictiveAccuracy(incidents) {
+            if (incidents.length === 0) return 95;
+            
+            // Mock calculation - in real implementation, this would be based on ML model accuracy
+            const baseAccuracy = 85;
+            const dataQuality = Math.min(100, incidents.length * 2); // More data = better accuracy
+            return Math.min(95, baseAccuracy + (dataQuality / 100) * 10);
+        }
+
+        // Calculate overall intelligence score
+        function calculateIntelligenceScore(incidents) {
+            if (incidents.length === 0) return 100;
+            
+            const preventionScore = calculatePreventionScore(incidents);
+            const predictiveAccuracy = calculatePredictiveAccuracy(incidents);
+            const patternScore = calculateRiskPatterns(incidents) * 5; // Each pattern adds 5 points
+            
+            return Math.min(100, Math.round((preventionScore + predictiveAccuracy + patternScore) / 3));
+        }
+
+        // Create intelligence charts
+        function createIntelligenceCharts(incidents) {
+            createRiskPatternChart(incidents);
+            createPredictiveChart(incidents);
+            createPreventionChart(incidents);
+            createIntelligenceHeatmapChart(incidents);
+        }
+
+        // Risk pattern analysis chart
+        function createRiskPatternChart(incidents) {
+            const ctx = document.getElementById('riskPatternChart').getContext('2d');
+            
+            // Analyze risk patterns by time and type
+            const riskPatterns = incidents.reduce((acc, incident) => {
+                const timeSlot = getTimeSlot(incident.timeOfDay);
+                const key = `${incident.incident_type}_${timeSlot}`;
+                acc[key] = (acc[key] || 0) + incident.riskLevel;
+                return acc;
+            }, {});
+
+            const colors = ['#e74c3c', '#e67e22', '#f39c12', '#27ae60', '#3498db', '#9b59b6'];
+
+            if (riskPatternChart) riskPatternChart.destroy();
+            
+            riskPatternChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(riskPatterns).map(key => key.replace('_', ' - ')),
+                    datasets: [{
+                        label: 'Risk Level',
+                        data: Object.values(riskPatterns),
+                        backgroundColor: colors.slice(0, Object.keys(riskPatterns).length),
+                        borderWidth: 1,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Risk Level'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Helper function to get time slot
+        function getTimeSlot(hour) {
+            if (hour >= 6 && hour < 12) return 'Morning';
+            if (hour >= 12 && hour < 18) return 'Afternoon';
+            if (hour >= 18 && hour < 22) return 'Evening';
+            return 'Night';
+        }
+
+        // Predictive safety trends chart
+        function createPredictiveChart(incidents) {
+            const ctx = document.getElementById('predictiveChart').getContext('2d');
+            
+            // Group incidents by day for the last 30 days
+            const last30Days = Array.from({length: 30}, (_, i) => {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                return date.toISOString().split('T')[0];
+            }).reverse();
+
+            const actualData = last30Days.map(date => {
+                return incidents.filter(incident => 
+                    incident.reported_at.startsWith(date)
+                ).length;
+            });
+
+            // Mock predictive data (in real implementation, this would come from ML model)
+            const predictedData = actualData.map((value, index) => {
+                const trend = index > 0 ? (actualData[index] - actualData[index - 1]) * 0.3 : 0;
+                return Math.max(0, value + trend + (Math.random() - 0.5) * 2);
+            });
+
+            if (predictiveChart) predictiveChart.destroy();
+            
+            predictiveChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: last30Days.map(date => new Date(date).toLocaleDateString()),
+                    datasets: [{
+                        label: 'Actual Incidents',
+                        data: actualData,
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.4
+                    }, {
+                        label: 'Predicted Trend',
+                        data: predictedData,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Incidents'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Prevention impact analysis chart
+        function createPreventionChart(incidents) {
+            const ctx = document.getElementById('preventionChart').getContext('2d');
+            
+            // Analyze prevention potential by incident type
+            const preventionData = incidents.reduce((acc, incident) => {
+                if (!acc[incident.incident_type]) {
+                    acc[incident.incident_type] = {
+                        total: 0,
+                        preventionScore: 0,
+                        count: 0
+                    };
+                }
+                acc[incident.incident_type].total += incident.preventionPotential;
+                acc[incident.incident_type].count += 1;
+                acc[incident.incident_type].preventionScore = acc[incident.incident_type].total / acc[incident.incident_type].count;
+                return acc;
+            }, {});
+
+            const colors = ['#27ae60', '#f39c12', '#e67e22', '#e74c3c', '#8e44ad', '#3498db'];
+
+            if (preventionChart) preventionChart.destroy();
+            
+            preventionChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(preventionData).map(type => type.replace(/_/g, ' ')),
+                    datasets: [{
+                        label: 'Prevention Potential',
+                        data: Object.values(preventionData).map(d => Math.round(d.preventionScore * 100)),
+                        backgroundColor: colors.slice(0, Object.keys(preventionData).length),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Intelligence heatmap chart
+        function createIntelligenceHeatmapChart(incidents) {
+            const ctx = document.getElementById('intelligenceHeatmap').getContext('2d');
+            
+            // Group incidents by location and calculate intelligence scores
+            const locationIntelligence = incidents.reduce((acc, incident) => {
+                const location = incident.location_description || 'Unknown Location';
+                if (!acc[location]) {
+                    acc[location] = {
+                        totalRisk: 0,
+                        preventionScore: 0,
+                        count: 0,
+                        intelligenceScore: 0
+                    };
+                }
+                acc[location].totalRisk += incident.riskLevel;
+                acc[location].preventionScore += incident.preventionPotential;
+                acc[location].count += 1;
+                acc[location].intelligenceScore = (acc[location].totalRisk / acc[location].count) * (acc[location].preventionScore / acc[location].count);
+                return acc;
+            }, {});
+
+            const topLocations = Object.entries(locationIntelligence)
+                .sort(([,a], [,b]) => b.intelligenceScore - a.intelligenceScore)
+                .slice(0, 5);
+
+            if (intelligenceHeatmap) intelligenceHeatmap.destroy();
+            
+            intelligenceHeatmap = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: topLocations.map(([location]) => location.length > 20 ? location.substring(0, 20) + '...' : location),
+                    datasets: [{
+                        label: 'Intelligence Score',
+                        data: topLocations.map(([, data]) => Math.round(data.intelligenceScore * 10)),
+                        backgroundColor: topLocations.map(([, data]) => {
+                            const score = data.intelligenceScore * 10;
+                            if (score > 7) return '#e74c3c';
+                            if (score > 5) return '#f39c12';
+                            if (score > 3) return '#f1c40f';
+                            return '#27ae60';
+                        }),
+                        borderWidth: 1,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 10,
+                            title: {
+                                display: true,
+                                text: 'Intelligence Score'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Display intelligence insights
+        function displayIntelligenceInsights(incidents) {
+            const container = document.getElementById('intelligence-insights');
+            
+            // Generate intelligence insights
+            const insights = generateIntelligenceInsights(incidents);
+
+            container.innerHTML = insights.map(insight => {
+                return `
+                    <div class="incident-item" style="border-left-color: ${insight.color}">
+                        <div>
+                            <div class="incident-type">${insight.title}</div>
+                            <div class="incident-time">${insight.description}</div>
+                        </div>
+                        <div class="incident-status" style="background: ${insight.color}; color: white;">${insight.priority}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Generate intelligence insights
+        function generateIntelligenceInsights(incidents) {
+            const insights = [];
+            
+            if (incidents.length === 0) {
+                insights.push({
+                    title: "No Data Available",
+                    description: "Start collecting incident data to generate insights",
+                    priority: "INFO",
+                    color: "#3498db"
+                });
+                return insights;
+            }
+
+            // Analyze patterns
+            const timePatterns = analyzeTimePatterns(incidents);
+            const locationPatterns = analyzeLocationPatterns(incidents);
+            const preventionOpportunities = analyzePreventionOpportunities(incidents);
+
+            // Add time-based insights
+            if (timePatterns.highRiskTime) {
+                insights.push({
+                    title: "High Risk Time Identified",
+                    description: `${timePatterns.highRiskTime} shows ${timePatterns.highRiskCount} incidents (${timePatterns.highRiskPercentage}% of total)`,
+                    priority: "HIGH",
+                    color: "#e74c3c"
+                });
+            }
+
+            // Add location-based insights
+            if (locationPatterns.hotspot) {
+                insights.push({
+                    title: "Safety Hotspot Detected",
+                    description: `${locationPatterns.hotspot} has ${locationPatterns.hotspotCount} incidents - consider increased monitoring`,
+                    priority: "MEDIUM",
+                    color: "#f39c12"
+                });
+            }
+
+            // Add prevention insights
+            if (preventionOpportunities.highPotential) {
+                insights.push({
+                    title: "Prevention Opportunity",
+                    description: `${preventionOpportunities.highPotential} incidents have high prevention potential (${preventionOpportunities.percentage}%)`,
+                    priority: "LOW",
+                    color: "#27ae60"
+                });
+            }
+
+            // Add trend insights
+            const trend = analyzeTrends(incidents);
+            if (trend.direction !== 'stable') {
+                insights.push({
+                    title: `Safety Trend: ${trend.direction.toUpperCase()}`,
+                    description: `Incidents are ${trend.direction} by ${trend.percentage}% compared to previous period`,
+                    priority: trend.direction === 'increasing' ? 'HIGH' : 'LOW',
+                    color: trend.direction === 'increasing' ? '#e74c3c' : '#27ae60'
+                });
+            }
+
+            return insights.slice(0, 5); // Limit to 5 insights
+        }
+
+        // Analyze time patterns
+        function analyzeTimePatterns(incidents) {
+            const timeCounts = {};
+            incidents.forEach(incident => {
+                const timeSlot = getTimeSlot(incident.timeOfDay);
+                timeCounts[timeSlot] = (timeCounts[timeSlot] || 0) + 1;
+            });
+
+            const maxTime = Object.keys(timeCounts).reduce((a, b) => timeCounts[a] > timeCounts[b] ? a : b);
+            const maxCount = timeCounts[maxTime];
+            const total = incidents.length;
+
+            return {
+                highRiskTime: maxCount > total * 0.3 ? maxTime : null,
+                highRiskCount: maxCount,
+                highRiskPercentage: Math.round((maxCount / total) * 100)
+            };
+        }
+
+        // Analyze location patterns
+        function analyzeLocationPatterns(incidents) {
+            const locationCounts = {};
+            incidents.forEach(incident => {
+                const location = incident.location_description || 'Unknown';
+                locationCounts[location] = (locationCounts[location] || 0) + 1;
+            });
+
+            const maxLocation = Object.keys(locationCounts).reduce((a, b) => locationCounts[a] > locationCounts[b] ? a : b);
+            const maxCount = locationCounts[maxLocation];
+
+            return {
+                hotspot: maxCount > 2 ? maxLocation : null,
+                hotspotCount: maxCount
+            };
+        }
+
+        // Analyze prevention opportunities
+        function analyzePreventionOpportunities(incidents) {
+            const highPotential = incidents.filter(i => i.preventionPotential > 0.7).length;
+            const percentage = Math.round((highPotential / incidents.length) * 100);
+
+            return {
+                highPotential: highPotential,
+                percentage: percentage
+            };
+        }
+
+        // Analyze trends (mock implementation)
+        function analyzeTrends(incidents) {
+            // Mock trend analysis - in real implementation, this would compare with historical data
+            const recent = incidents.filter(i => {
+                const date = new Date(i.reported_at);
+                const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+                return date > weekAgo;
+            }).length;
+
+            const older = incidents.length - recent;
+            const change = recent > older ? 'increasing' : recent < older ? 'decreasing' : 'stable';
+            const percentage = Math.abs(Math.round(((recent - older) / Math.max(older, 1)) * 100));
+
+            return { direction: change, percentage };
+        }
+
+        // Helper functions
+        function getTimeAgo(dateString) {
+            const now = new Date();
+            const incidentDate = new Date(dateString);
+            const diffMs = now - incidentDate;
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            return `${diffDays}d ago`;
+        }
+
+        function getIncidentColor(type) {
+            const colors = {
+                'snake_bite': '#e74c3c',
+                'fire_attack': '#e67e22',
+                'assault': '#8e44ad',
+                'medical': '#3498db',
+                'theft': '#f39c12',
+                'harassment': '#e91e63',
+                'vandalism': '#795548',
+                'pickpocketing': '#607d8b',
+                'other': '#9e9e9e'
+            };
+            return colors[type] || '#9e9e9e';
+        }
+
+        function formatIncidentType(type) {
+            return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboard();
+            
+            // Auto-refresh every 5 minutes
+            setInterval(loadDashboard, 5 * 60 * 1000);
+        });
+    </script>
+</body>
+</html>
