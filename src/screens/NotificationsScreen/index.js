@@ -20,6 +20,16 @@ const NotificationsScreen = ({navigation}) => {
     fetchIncidents();
   }, []);
 
+  const getImageForType = (type) => {
+    const t = (type || '').toLowerCase();
+    if (t.includes('fire')) return require('../../components/notifScreenMedia/fire.png');
+    if (t.includes('snake') || t.includes('medical')) return require('../../components/notifScreenMedia/snake.jpeg');
+    if (t.includes('pickpocket')) return require('../../components/notifScreenMedia/pickpocketing.png');
+    if (t.includes('theft') || t.includes('robbery')) return require('../../components/notifScreenMedia/robbery.png');
+    if (t.includes('missing')) return require('../../components/notifScreenMedia/missing.png');
+    return require('../../components/notifScreenMedia/fire.png');
+  };
+
   const fetchIncidents = async () => {
     try {
       setLoading(true);
@@ -33,18 +43,27 @@ const NotificationsScreen = ({navigation}) => {
       }
 
       // Convert incidents to notification format (last 5)
-      const recentIncidents = data?.slice(0, 5).map(incident => ({
-        id: incident.id,
-        title: `${(incident.incident_type || 'unknown').replace('_', ' ').toUpperCase()} - ${formatLocationName(incident.latitude, incident.longitude, incident.location_description)}`,
-        message: incident.description || `Incident reported at ${formatLocationName(incident.latitude, incident.longitude, incident.location_description)}`,
-        location: formatLocationName(incident.latitude, incident.longitude, incident.location_description),
-        status: incident.status || 'Reported',
-        time: new Date(incident.reported_at || new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        image: require('../../components/notifScreenMedia/fire.png'), // Default image
-        type: 'incident',
-        priority: 'high',
-        isRead: false
-      })) || [];
+      const recentIncidents = data?.slice(0, 5) ? await Promise.all(
+        data.slice(0, 5).map(async (incident) => {
+          const loc = await formatLocationName(
+            incident.latitude,
+            incident.longitude,
+            incident.location_description
+          );
+          return {
+            id: incident.id,
+            title: `${(incident.incident_type || 'unknown').replace('_', ' ').toUpperCase()} - ${loc}`,
+            message: incident.description || `Incident reported at ${loc}`,
+            location: loc,
+            status: incident.status || 'Reported',
+            time: new Date(incident.reported_at || new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            image: getImageForType(incident.incident_type),
+            type: 'incident',
+            priority: 'high',
+            isRead: false
+          };
+        })
+      ) : [];
 
       setIncidents(recentIncidents);
     } catch (error) {

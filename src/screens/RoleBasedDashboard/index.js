@@ -114,7 +114,7 @@ export default function RoleBasedDashboard({ navigation }) {
       setIncidents(incidentsWithDisplay);
 
       // Calculate stats
-      const statsData = calculateStats(filteredIncidents);
+      const statsData = calculateStats(filteredIncidents, user.id);
       setStats(statsData);
 
     } catch (error) {
@@ -185,14 +185,16 @@ export default function RoleBasedDashboard({ navigation }) {
     }
   };
 
-  const calculateStats = (incidents) => {
+  const calculateStats = (incidents, currentUserId) => {
     const total = incidents.length;
     const reported = incidents.filter(i => i.status === 'reported').length;
     const inProgress = incidents.filter(i => i.status === 'in_progress').length;
     const resolved = incidents.filter(i => i.status === 'resolved').length;
     const urgent = incidents.filter(i => i.status === 'urgent').length;
+    const myReports = incidents.filter(i => i.user_id === currentUserId).length;
+    const assignedToMe = incidents.filter(i => i.assigned_to === currentUserId).length;
 
-    return { total, reported, inProgress, resolved, urgent };
+    return { total, reported, inProgress, resolved, urgent, myReports, assignedToMe };
   };
 
   const onRefresh = async () => {
@@ -295,10 +297,16 @@ export default function RoleBasedDashboard({ navigation }) {
       </Text>
       
       <View style={styles.incidentFooter}>
-        <Text style={styles.incidentLocation}>
-          <Ionicons name="location-outline" size={14} /> {incident.displayLocation || incident.location_description || 'Unknown Location'}
-        </Text>
-        <Text style={styles.incidentTime}>
+        <View style={styles.incidentLocationContainer}>
+          <Text
+            style={styles.incidentLocation}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
+            <Ionicons name="location-outline" size={14} /> {incident.displayLocation || incident.location_description || 'Unknown Location'}
+          </Text>
+        </View>
+        <Text style={styles.incidentTime} numberOfLines={1}>
           {new Date(incident.reported_at).toLocaleDateString()}
         </Text>
       </View>
@@ -343,6 +351,8 @@ export default function RoleBasedDashboard({ navigation }) {
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Overview</Text>
           <View style={styles.statsGrid}>
             {renderStatsCard('Total', stats.total, 'list-outline', getRoleColor(userRole))}
+            {renderStatsCard('My Reports', stats.myReports, 'person-outline', getRoleColor(userRole))}
+            {renderStatsCard('Assigned to Me', stats.assignedToMe, 'briefcase-outline', getRoleColor(userRole))}
           </View>
         </View>
 
@@ -583,17 +593,24 @@ const styles = StyleSheet.create({
   incidentFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+  },
+  incidentLocationContainer: {
+    flex: 1,
+    paddingRight: 8,
   },
   incidentLocation: {
     fontSize: 12,
     color: '#999',
     fontFamily: 'Montserrat-Regular',
+    flexShrink: 1,
   },
   incidentTime: {
     fontSize: 12,
     color: '#999',
     fontFamily: 'Montserrat-Regular',
+    maxWidth: 90,
+    textAlign: 'right',
   },
   emptyState: {
     alignItems: 'center',
