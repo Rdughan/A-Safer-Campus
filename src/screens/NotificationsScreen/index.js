@@ -8,7 +8,7 @@ import { BlurView } from 'expo-blur';
 import { useTheme } from '../../hooks/useTheme';
 import { incidentService } from '../../services/incidentService';
 import { AuthContext } from '../../context/AuthContext';
-import { formatLocationName } from '../../services/locationService';
+import { getLocationDetails } from '../../services/locationService';
 
 const NotificationsScreen = ({navigation}) => {
   const { theme, isDarkMode } = useTheme();
@@ -30,6 +30,21 @@ const NotificationsScreen = ({navigation}) => {
     return require('../../components/notifScreenMedia/fire.png');
   };
 
+  // Build a concise, human-friendly location string
+  const formatDisplayLocation = (details, fallbackText) => {
+    if (!details) return fallbackText || 'Unknown Location';
+    const parts = [];
+    // Prefer name if present (landmark), else district/city/region
+    if (details.name && details.name !== 'Unknown Location') parts.push(details.name);
+    if (details.district && !parts.includes(details.district)) parts.push(details.district);
+    if (details.city && !parts.includes(details.city)) parts.push(details.city);
+    if (parts.length === 0 && details.region) parts.push(details.region);
+    const label = parts.join(', ');
+    // Fallback to prior text if we only have coordinate-y text
+    if (!label || /^Location:/i.test(label)) return fallbackText || 'Unknown Location';
+    return label;
+  };
+
   const fetchIncidents = async () => {
     try {
       setLoading(true);
@@ -42,19 +57,23 @@ const NotificationsScreen = ({navigation}) => {
         return;
       }
 
-      // Convert incidents to notification format (last 5)
+      // Convert incidents to notification format (last 5) with clean location names
       const recentIncidents = data?.slice(0, 5) ? await Promise.all(
         data.slice(0, 5).map(async (incident) => {
-          const loc = await formatLocationName(
-            incident.latitude,
-            incident.longitude,
-            incident.location_description
-          );
+          let locText = incident.location_description || '';
+          let details = null;
+          try {
+            if (incident.latitude && incident.longitude) {
+              details = await getLocationDetails(incident.latitude, incident.longitude);
+            }
+          } catch {}
+          const displayLoc = formatDisplayLocation(details, locText);
+          const typeSafe = (incident.incident_type || 'unknown').replace('_', ' ').toUpperCase();
           return {
             id: incident.id,
-            title: `${(incident.incident_type || 'unknown').replace('_', ' ').toUpperCase()} - ${loc}`,
-            message: incident.description || `Incident reported at ${loc}`,
-            location: loc,
+            title: `${typeSafe} - ${displayLoc}`,
+            message: incident.description || `Incident reported at ${displayLoc}`,
+            location: displayLoc,
             status: incident.status || 'Reported',
             time: new Date(incident.reported_at || new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             image: getImageForType(incident.incident_type),

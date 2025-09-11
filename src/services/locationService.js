@@ -101,7 +101,7 @@ export const getLocationDetails = async (latitude, longitude) => {
   const promise = enqueueReverseGeocode(async (forceFallback) => {
     if (forceFallback) {
       return {
-        displayName: `Location: ${latitude.toFixed(3)}, ${longitude.toFixed(3)}`,
+        displayName: 'Near this area',
         name: 'Unknown Location',
         address: null,
         coordinates: { lat: latitude, lng: longitude }
@@ -148,7 +148,7 @@ export const getLocationDetails = async (latitude, longitude) => {
     }
 
     return {
-      displayName: `Location: ${latitude.toFixed(3)}, ${longitude.toFixed(3)}`,
+      displayName: 'Near this area',
       name: 'Unknown Location',
       address: null,
       coordinates: { lat: latitude, lng: longitude }
