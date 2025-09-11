@@ -40,6 +40,7 @@ export default function ReportIncidentScreen({ navigation }) {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showMediaOptions, setShowMediaOptions] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -327,18 +328,8 @@ export default function ReportIncidentScreen({ navigation }) {
         }),
       ]).start();
 
-      // Show success message
-      Alert.alert(
-        'Success', 
-        'Incident report submitted successfully!',
-        [{ 
-          text: 'OK', 
-          onPress: () => {
-            // Navigate back to home screen which will refresh the map
-            navigation.goBack();
-          }
-        }]
-      );
+      // Show custom success modal
+      setShowSuccessModal(true);
 
     } catch (error) {
       console.error('Error submitting incident:', error);
@@ -351,6 +342,12 @@ export default function ReportIncidentScreen({ navigation }) {
 
   const handleCancelSubmit = () => {
     setShowConfirmationModal(false);
+  };
+
+  const handleSuccessClose = () => {
+    setShowSuccessModal(false);
+    // Navigate back to home screen which will refresh the map
+    navigation.goBack();
   };
 
   return (
@@ -560,18 +557,40 @@ export default function ReportIncidentScreen({ navigation }) {
       <Modal transparent visible={showConfirmationModal} animationType="fade" onRequestClose={handleCancelSubmit}>
         <View style={[styles.confirmationContainer, { backgroundColor: theme.background, opacity: 0.9 }]}>
           <View style={[styles.confirmationMainContainer, { backgroundColor: theme.background }]}>
-            <Ionicons name="checkmark-circle" size={120} color={theme.primary} style={styles.confirmationIcon} />
-            <Text style={[styles.confirmationQuestion, { color: theme.text }]}>Incident Report Submitted!</Text>
+            <Ionicons name="help-circle" size={120} color={theme.primary} style={styles.confirmationIcon} />
+            <Text style={[styles.confirmationQuestion, { color: theme.text }]}>Confirm Submission</Text>
+            <Text style={[styles.confirmationSubQuestion, { color: theme.text }]}>
+              Are you sure you want to submit this incident report? This action cannot be undone.
+            </Text>
+            
+            <CustomButton
+              buttonText="Submit Report"
+              backgroundColor={theme.primary} 
+              borderWidth={1}
+              borderColor={theme.primary}
+              onPress={handleConfirmSubmit}
+            />
+           
+          </View>
+        </View>
+      </Modal>
+
+      {/* Success Modal */}
+      <Modal transparent visible={showSuccessModal} animationType="fade" onRequestClose={handleSuccessClose}>
+        <View style={[styles.confirmationContainer, { backgroundColor: theme.background, opacity: 0.9 }]}>
+          <View style={[styles.confirmationMainContainer, { backgroundColor: theme.background }]}>
+            <Ionicons name="checkmark-circle" size={120} color="#4CAF50" style={styles.confirmationIcon} />
+            <Text style={[styles.confirmationQuestion, { color: theme.text }]}>Success!</Text>
             <Text style={[styles.confirmationSubQuestion, { color: theme.text }]}>
               Your incident report has been successfully submitted. Thank you for helping keep our campus safe.
             </Text>
             
             <CustomButton
-              buttonText="OK"
+              buttonText="Continue"
               backgroundColor={theme.primary} 
               borderWidth={1}
               borderColor={theme.primary}
-              onPress={handleConfirmSubmit}
+              onPress={handleSuccessClose}
             />
            
           </View>

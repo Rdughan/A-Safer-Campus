@@ -1,5 +1,5 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle, useContext } from 'react';
-import { View, StyleSheet, Text, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, ActivityIndicator, Alert, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import MapView, { Heatmap, PROVIDER_GOOGLE, Marker } from 'react-native-maps';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { incidentService } from '../services/incidentService';
@@ -23,6 +23,8 @@ const SafetyHeatmap = forwardRef(({
   const [region, setRegion] = useState(null);
   const [regionInitialized, setRegionInitialized] = useState(false);
   const [legendCollapsed, setLegendCollapsed] = useState(false);
+  const [selectedIncident, setSelectedIncident] = useState(null);
+  const [showIncidentModal, setShowIncidentModal] = useState(false);
 
   // Expose refresh and updateRegion methods to parent component
   useImperativeHandle(ref, () => ({
@@ -59,8 +61,9 @@ const SafetyHeatmap = forwardRef(({
   }, [userLocation, initialRegion, regionInitialized]);
 
   // Update region when userLocation changes (only if not already initialized with user location)
+  // AND only if no selectedCampus is present (to prevent reverting from search results)
   useEffect(() => {
-    if (userLocation && regionInitialized) {
+    if (userLocation && regionInitialized && !selectedCampus) {
       // Only update if the user location is significantly different
       if (region) {
         const latDiff = Math.abs(userLocation.latitude - region.latitude);
@@ -82,8 +85,7 @@ const SafetyHeatmap = forwardRef(({
         });
       }
     }
-  }, [userLocation, regionInitialized, region]);
-
+  }, [userLocation, regionInitialized, region, selectedCampus]);
 
   // Fetch incidents from Supabase
   const fetchIncidents = async () => {
@@ -301,6 +303,95 @@ const SafetyHeatmap = forwardRef(({
     return Math.min(clusters / totalIncidents, 1);
   };
 
+  // Format date for display
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Handle incident marker press
+  const handleIncidentPress = (incident) => {
+    setSelectedIncident(incident);
+    setShowIncidentModal(true);
+    if (onIncidentPress) {
+      onIncidentPress(incident);
+    }
+  };
+
+  // Handle cluster marker press
+  const handleClusterPress = (group) => {
+    // Show details for the cluster
+    const clusterInfo = {
+      ...group,
+      isCluster: true,
+      count: group.incidents.length,
+      mostRecentIncident: group.incidents.sort((a, b) => 
+        new Date(b.reported_at) - new Date(a.reported_at)
+      )[0]
+    };
+    setSelectedIncident(clusterInfo);
+    setShowIncidentModal(true);
+  };
+
+  // Handle map press to detect heatmap taps
+  const handleMapPress = (event) => {
+    if (!showHeatmap || incidents.length === 0) return;
+    
+    const { latitude, longitude } = event.nativeEvent.coordinate;
+    const tapRadius = 0.002; // ~200 meters - larger radius for better tap detection
+    
+    // Find the closest incident to the tap point, grouped by type
+    let closestIncident = null;
+    let closestDistance = Infinity;
+    let closestType = null;
+    
+    // Check each incident type separately
+    Object.entries(incidentsByType).forEach(([incidentType, typeIncidents]) => {
+      typeIncidents.forEach(incident => {
+        const distance = Math.sqrt(
+          Math.pow(latitude - incident.latitude, 2) +
+          Math.pow(longitude - incident.longitude, 2)
+        );
+        
+        if (distance <= tapRadius && distance < closestDistance) {
+          closestDistance = distance;
+          closestIncident = incident;
+          closestType = incidentType;
+        }
+      });
+    });
+    
+    // If we found an incident within tap radius, create a cluster for that type
+    if (closestIncident && closestType) {
+      // Find all incidents of the same type near the tapped location
+      const nearbyIncidents = incidentsByType[closestType].filter(incident => {
+        const distance = Math.sqrt(
+          Math.pow(latitude - incident.latitude, 2) +
+          Math.pow(longitude - incident.longitude, 2)
+        );
+        return distance <= tapRadius;
+      });
+      
+      // Create cluster for this incident type
+      const cluster = {
+        center: {
+          latitude: nearbyIncidents.reduce((sum, inc) => sum + inc.latitude, 0) / nearbyIncidents.length,
+          longitude: nearbyIncidents.reduce((sum, inc) => sum + inc.longitude, 0) / nearbyIncidents.length
+        },
+        incidents: nearbyIncidents,
+        type: closestType
+      };
+      
+      handleClusterPress(cluster);
+    }
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, style]}>
@@ -317,31 +408,21 @@ const SafetyHeatmap = forwardRef(({
       <MapView
         provider={PROVIDER_GOOGLE}
         style={styles.map}
-        region={region || {
+        initialRegion={region || {
           latitude: 6.6735,
           longitude: -1.5718,
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
         }}
-        onRegionChangeComplete={(newRegion) => {
-          // Only update if there's a significant change to prevent constant updates
-          if (region) {
-            const latDiff = Math.abs(newRegion.latitude - region.latitude);
-            const lngDiff = Math.abs(newRegion.longitude - region.longitude);
-            
-            // Only update if the change is significant (user manually moved map)
-            // Use a smaller threshold to be more responsive to user input
-            if (latDiff > 0.001 || lngDiff > 0.001) {
-              setRegion(newRegion);
-            }
-          } else {
-            setRegion(newRegion);
-          }
-        }}
         showsUserLocation={true}
-        showsMyLocationButton={false} // We have our own location button
+        showsMyLocationButton={false}
         showsCompass={true}
         showsScale={true}
+        zoomEnabled={true}
+        scrollEnabled={true}
+        pitchEnabled={true}
+        rotateEnabled={true}
+        onPress={handleMapPress}
       >
         {/* User Location Marker - only show if showMarkers is true */}
         {showMarkers && userLocation && (
@@ -370,7 +451,7 @@ const SafetyHeatmap = forwardRef(({
           />
         )}
 
-        {/* Individual Incident Markers - show when markers are enabled */}
+        {/* Individual Incident Markers - show when markers are enabled and make them clickable */}
         {showMarkers && incidents.map((incident, index) => (
           <Marker
             key={`incident-${incident.id || index}`}
@@ -381,10 +462,11 @@ const SafetyHeatmap = forwardRef(({
             title={incident.title || `${incident.incident_type?.replace('_', ' ')} Incident`}
             description={incident.description || `Reported at ${incident.location_description || 'Unknown Location'}`}
             pinColor={getIncidentColor(incident.incident_type)}
+            onPress={() => handleIncidentPress(incident)}
           />
         ))}
 
-        {/* Clustered Incident Markers - only show if showMarkers is true and not showing individual markers */}
+        {/* Clustered Incident Markers - make them clickable too */}
         {showMarkers && !showHeatmap && Object.values(groupedIncidents).flat().map((group, index) => (
           <Marker
             key={`group-${index}`}
@@ -395,6 +477,7 @@ const SafetyHeatmap = forwardRef(({
             title={`${group.incidents.length} ${group.type.replace('_', ' ')} incident${group.incidents.length > 1 ? 's' : ''}`}
             description={`${group.incidents.length} incident${group.incidents.length > 1 ? 's' : ''} reported in this area`}
             pinColor={getIncidentColor(group.type)}
+            onPress={() => handleClusterPress(group)}
           >
             <View style={[
               styles.clusterMarker,
@@ -451,9 +534,142 @@ const SafetyHeatmap = forwardRef(({
                 />
               );
             })}
+            
           </>
         )}
       </MapView>
+      
+      {/* Incident Details Modal */}
+      <Modal
+        visible={showIncidentModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowIncidentModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>
+                {selectedIncident?.isCluster 
+                  ? `${selectedIncident.count} ${getIncidentDisplayName(selectedIncident.type)} Incidents`
+                  : getIncidentDisplayName(selectedIncident?.incident_type)
+                }
+              </Text>
+              <TouchableOpacity onPress={() => setShowIncidentModal(false)}>
+                <Ionicons name="close" size={24} color={theme.text} />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.modalBody}>
+              {selectedIncident?.isCluster ? (
+                // Cluster details
+                <View>
+                  <View style={styles.modalSection}>
+                    <Text style={[styles.modalSectionTitle, { color: theme.text }]}>Cluster Information</Text>
+                    <Text style={[styles.modalText, { color: theme.text }]}>
+                      {selectedIncident.count} incidents of {getIncidentDisplayName(selectedIncident.type)} reported in this area
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.modalSection}>
+                    <Text style={[styles.modalSectionTitle, { color: theme.text }]}>Most Recent Incident</Text>
+                    <Text style={[styles.modalText, { color: theme.text }]}>
+                      Reported: {formatDate(selectedIncident.mostRecentIncident?.reported_at)}
+                    </Text>
+                    {selectedIncident.mostRecentIncident?.location_description && (
+                      <Text style={[styles.modalText, { color: theme.text }]}>
+                        Location: {selectedIncident.mostRecentIncident.location_description}
+                      </Text>
+                    )}
+                  </View>
+
+                  <View style={styles.modalSection}>
+                    <Text style={[styles.modalSectionTitle, { color: theme.text }]}>All Incidents in this Area</Text>
+                    {selectedIncident.incidents?.map((incident, index) => (
+                      <View key={index} style={[styles.incidentItem, { borderBottomColor: theme.border }]}>
+                        <Text style={[styles.incidentTime, { color: theme.primary }]}>
+                          {formatDate(incident.reported_at)}
+                        </Text>
+                        {incident.title && (
+                          <Text style={[styles.incidentTitle, { color: theme.text }]}>
+                            {incident.title}
+                          </Text>
+                        )}
+                        {incident.description && (
+                          <Text style={[styles.incidentDescription, { color: theme.textSecondary }]}>
+                            {incident.description}
+                          </Text>
+                        )}
+                        {incident.location_description && (
+                          <Text style={[styles.incidentLocation, { color: theme.textSecondary }]}>
+                            📍 {incident.location_description}
+                          </Text>
+                        )}
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ) : (
+                // Single incident details
+                <View>
+                  {selectedIncident?.title && (
+                    <View style={styles.modalSection}>
+                      <Text style={[styles.modalSectionTitle, { color: theme.text }]}>Title</Text>
+                      <Text style={[styles.modalText, { color: theme.text }]}>
+                        {selectedIncident.title}
+                      </Text>
+                    </View>
+                  )}
+                  
+                  <View style={styles.modalSection}>
+                    <Text style={[styles.modalSectionTitle, { color: theme.text }]}>Reported</Text>
+                    <Text style={[styles.modalText, { color: theme.text }]}>
+                      {formatDate(selectedIncident?.reported_at)}
+                    </Text>
+                  </View>
+
+                  {selectedIncident?.description && (
+                    <View style={styles.modalSection}>
+                      <Text style={[styles.modalSectionTitle, { color: theme.text }]}>Description</Text>
+                      <Text style={[styles.modalText, { color: theme.text }]}>
+                        {selectedIncident.description}
+                      </Text>
+                    </View>
+                  )}
+
+                  {selectedIncident?.location_description && (
+                    <View style={styles.modalSection}>
+                      <Text style={[styles.modalSectionTitle, { color: theme.text }]}>Location</Text>
+                      <Text style={[styles.modalText, { color: theme.text }]}>
+                        📍 {selectedIncident.location_description}
+                      </Text>
+                    </View>
+                  )}
+
+                  {selectedIncident?.status && (
+                    <View style={styles.modalSection}>
+                      <Text style={[styles.modalSectionTitle, { color: theme.text }]}>Status</Text>
+                      <Text style={[styles.modalText, { color: theme.text }]}>
+                        {selectedIncident.status.charAt(0).toUpperCase() + selectedIncident.status.slice(1)}
+                      </Text>
+                    </View>
+                  )}
+
+                  <View style={styles.modalSection}>
+                    <Text style={[styles.modalSectionTitle, { color: theme.text }]}>Severity</Text>
+                    <View style={[styles.severityIndicator, { backgroundColor: getIncidentColor(selectedIncident?.incident_type) }]}>
+                      <Text style={styles.severityText}>
+                        {getIncidentWeight(selectedIncident?.incident_type) >= 0.8 ? 'High' : 
+                         getIncidentWeight(selectedIncident?.incident_type) >= 0.6 ? 'Medium' : 'Low'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
       
       {/* Collapsible Legend - Bottom Right */}
       {(showHeatmap || (showMarkers && incidents.length > 0)) && (
@@ -679,6 +895,107 @@ const styles = StyleSheet.create({
   },
   clusterTextLarge: {
     fontSize: 14,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    maxHeight: '70%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    fontFamily: 'Montserrat-Bold',
+    flex: 1,
+  },
+  modalBody: {
+    padding: 20,
+  },
+  modalSection: {
+    marginBottom: 20,
+  },
+  modalSectionTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    fontFamily: 'Montserrat-Bold',
+    marginBottom: 8,
+  },
+  modalText: {
+    fontSize: 14,
+    fontFamily: 'Montserrat-Regular',
+    lineHeight: 20,
+  },
+  incidentItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    marginBottom: 8,
+  },
+  incidentTime: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    fontFamily: 'Montserrat-Bold',
+    marginBottom: 4,
+  },
+  incidentTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'Montserrat-SemiBold',
+    marginBottom: 4,
+  },
+  incidentDescription: {
+    fontSize: 13,
+    fontFamily: 'Montserrat-Regular',
+    lineHeight: 18,
+    marginBottom: 4,
+  },
+  incidentLocation: {
+    fontSize: 12,
+    fontFamily: 'Montserrat-Regular',
+    fontStyle: 'italic',
+  },
+  severityIndicator: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+  },
+  severityText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+    fontFamily: 'Montserrat-Bold',
+  },
+  locationButton: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });
 
