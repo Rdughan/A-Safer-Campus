@@ -245,13 +245,61 @@ const SafetyHeatmap = forwardRef(({
   // Group incidents by type and location for better visualization
   const groupedIncidents = groupIncidentsByTypeAndLocation(incidents);
 
-  // Convert incidents to heatmap points with distinct colors for each type
+  // Convert incidents to heatmap points with density-based intensity
   const heatmapPoints = incidents.map(incident => ({
     latitude: incident.latitude,
     longitude: incident.longitude,
     weight: getIncidentWeight(incident.incident_type),
-    color: getIncidentColor(incident.incident_type),
   }));
+
+  // Group incidents by type for separate heatmaps
+  const incidentsByType = incidents.reduce((acc, incident) => {
+    const type = incident.incident_type;
+    if (!acc[type]) acc[type] = [];
+    acc[type].push(incident);
+    return acc;
+  }, {});
+
+  // Calculate incident density (0-1 scale)
+  const calculateIncidentDensity = (typeIncidents) => {
+    if (typeIncidents.length <= 1) return 0;
+    
+    const clusterRadius = 0.001; // ~100 meters
+    let clusters = 0;
+    let totalIncidents = typeIncidents.length;
+    
+    // Simple clustering to find density
+    const processed = new Set();
+    
+    typeIncidents.forEach((incident, index) => {
+      if (processed.has(index)) return;
+      
+      const cluster = [incident];
+      processed.add(index);
+      
+      // Find nearby incidents
+      typeIncidents.forEach((otherIncident, otherIndex) => {
+        if (processed.has(otherIndex) || index === otherIndex) return;
+        
+        const distance = Math.sqrt(
+          Math.pow(incident.latitude - otherIncident.latitude, 2) +
+          Math.pow(incident.longitude - otherIncident.longitude, 2)
+        );
+        
+        if (distance <= clusterRadius) {
+          cluster.push(otherIncident);
+          processed.add(otherIndex);
+        }
+      });
+      
+      if (cluster.length > 1) {
+        clusters++;
+      }
+    });
+    
+    // Return density factor (0-1)
+    return Math.min(clusters / totalIncidents, 1);
+  };
 
   if (loading) {
     return (
@@ -365,31 +413,44 @@ const SafetyHeatmap = forwardRef(({
 
         {showHeatmap && heatmapPoints.length > 0 && (
           <>
-            {/* Create separate heatmaps for each incident type with distinct colors */}
-            {Object.entries(
-              incidents.reduce((acc, incident) => {
-                const type = incident.incident_type;
-                if (!acc[type]) acc[type] = [];
-                acc[type].push({
-                  latitude: incident.latitude,
-                  longitude: incident.longitude,
-                  weight: getIncidentWeight(incident.incident_type),
-                });
-                return acc;
-              }, {})
-            ).map(([incidentType, points]) => (
-              <Heatmap
-                key={incidentType}
-                points={points}
-                radius={50}
-                opacity={0.7}
-                gradient={{
-                  colors: [getIncidentColor(incidentType) + '40', getIncidentColor(incidentType) + '80', getIncidentColor(incidentType)],
-                  startPoints: [0.2, 0.6, 1.0],
-                  colorMapSize: 1000,
-                }}
-              />
-            ))}
+            {/* Create separate heatmaps for each incident type with distinct colors and density-based sizing */}
+            {Object.entries(incidentsByType).map(([incidentType, typeIncidents]) => {
+              // Calculate density for this incident type
+              const density = calculateIncidentDensity(typeIncidents);
+              
+              // Adjust radius and opacity based on density
+              const baseRadius = 50;
+              const radius = baseRadius + (density * 30); // Increase radius based on density
+              
+              const baseOpacity = 0.6;
+              const opacity = Math.min(baseOpacity + (density * 0.3), 0.9); // Increase opacity based on density
+              
+              // Get the base color for this incident type
+              const baseColor = getIncidentColor(incidentType);
+              
+              return (
+                <Heatmap
+                  key={incidentType}
+                  points={typeIncidents.map(incident => ({
+                    latitude: incident.latitude,
+                    longitude: incident.longitude,
+                    weight: getIncidentWeight(incident.incident_type) * (1 + density * 0.5), // Increase weight based on density
+                  }))}
+                  radius={radius}
+                  opacity={opacity}
+                  gradient={{
+                    colors: [
+                      baseColor + '00', // Completely transparent at edges
+                      baseColor + '40', // Semi-transparent in middle
+                      baseColor + '80', // More opaque in center
+                      baseColor + 'FF'  // Full opacity at core
+                    ],
+                    startPoints: [0.0, 0.3, 0.7, 1.0],
+                    colorMapSize: 256,
+                  }}
+                />
+              );
+            })}
           </>
         )}
       </MapView>
@@ -413,14 +474,24 @@ const SafetyHeatmap = forwardRef(({
           
           {!legendCollapsed && (
             <View style={styles.legendItems}>
-              {[...new Set(incidents.map(i => i.incident_type))].map(type => (
-                <View key={type} style={styles.legendItem}>
-                  <View style={[styles.legendColor, { backgroundColor: getIncidentColor(type) }]} />
-                  <Text style={[styles.legendText, { color: theme.text }]}>
-                    {getIncidentDisplayName(type)}
-                  </Text>
-                </View>
-              ))}
+              {[...new Set(incidents.map(i => i.incident_type))].map(type => {
+                const typeIncidents = incidents.filter(i => i.incident_type === type);
+                const density = calculateIncidentDensity(typeIncidents);
+                
+                return (
+                  <View key={type} style={styles.legendItem}>
+                    <View style={[styles.legendColor, { backgroundColor: getIncidentColor(type) }]} />
+                    <Text style={[styles.legendText, { color: theme.text }]}>
+                      {getIncidentDisplayName(type)} ({typeIncidents.length})
+                    </Text>
+                    {density > 0 && (
+                      <Text style={[styles.legendSubtext, { color: theme.text + '80' }]}>
+                        Hotspot
+                      </Text>
+                    )}
+                  </View>
+                );
+              })}
             </View>
           )}
         </View>
@@ -553,6 +624,17 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 12,
     fontFamily: 'Montserrat-Regular',
+  },
+  legendSubtitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    fontFamily: 'Montserrat-Bold',
+  },
+  legendSubtext: {
+    fontSize: 10,
+    fontFamily: 'Montserrat-Regular',
+    marginTop: 2,
   },
   statsContainer: {
     position: 'absolute',

@@ -36,7 +36,10 @@ const NotificationsScreen = ({navigation}) => {
         id: incident.id,
         title: `${(incident.incident_type || 'unknown').replace('_', ' ').toUpperCase()} - ${incident.location_description || 'Unknown Location'}`,
         message: incident.description || `Incident reported at ${incident.location_description || 'Unknown Location'}`,
+        location: incident.location_description || 'Unknown Location',
+        status: incident.status || 'Reported',
         time: new Date(incident.reported_at || new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        image: require('../components/notifScreenMedia/fire.png'), // Default image
         type: 'incident',
         priority: 'high',
         isRead: false

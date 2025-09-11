@@ -27,68 +27,10 @@ const HomeScreen = ({ route }) => {
     const [modalData, setModalData] = useState({ title: '', message: '', type: 'success' });
     const [isMapMoving, setIsMapMoving] = useState(false);
     const [showRealHeatmap, setShowRealHeatmap] = useState(true);
+    const [searchResults, setSearchResults] = useState([]);
+    const [showSearchResults, setShowSearchResults] = useState(false);
+    const [searchTimeout, setSearchTimeout] = useState(null);
     const heatmapRef = useRef(null);
-
-    const ghanaCampuses = [
-        {
-            id: 1,
-            name: "University of Ghana",
-            location: { latitude: 5.6502, longitude: -0.1869 },
-            address: "Legon, Accra",
-            crimeHotspots: [
-                { latitude: 5.6502, longitude: -0.1869, intensity: 0.8 },
-                { latitude: 5.6510, longitude: -0.1875, intensity: 0.6 },
-                { latitude: 5.6495, longitude: -0.1860, intensity: 0.7 },
-                { latitude: 5.6508, longitude: -0.1880, intensity: 0.5 },
-                { latitude: 5.6490, longitude: -0.1855, intensity: 0.9 }
-            ]
-        },
-        {
-            id: 2,
-            name: "Kwame Nkrumah University of Science and Technology",
-            location: { latitude: 6.6720, longitude: -1.5713 },
-            address: "Kumasi",
-            crimeHotspots: [
-                { latitude: 6.6720, longitude: -1.5713, intensity: 0.7 },
-                { latitude: 6.6725, longitude: -1.5718, intensity: 0.8 },
-                { latitude: 6.6715, longitude: -1.5708, intensity: 0.6 },
-                { latitude: 6.6730, longitude: -1.5720, intensity: 0.5 }
-            ]
-        },
-        {
-            id: 3,
-            name: "University of Cape Coast",
-            location: { latitude: 5.1053, longitude: -1.2466 },
-            address: "Cape Coast",
-            crimeHotspots: [
-                { latitude: 5.1053, longitude: -1.2466, intensity: 0.6 },
-                { latitude: 5.1058, longitude: -1.2470, intensity: 0.7 },
-                { latitude: 5.1048, longitude: -1.2460, intensity: 0.5 }
-            ]
-        },
-        {
-            id: 4,
-            name: "University for Development Studies",
-            location: { latitude: 9.4035, longitude: -0.8423 },
-            address: "Tamale",
-            crimeHotspots: [
-                { latitude: 9.4035, longitude: -0.8423, intensity: 0.5 },
-                { latitude: 9.4040, longitude: -0.8428, intensity: 0.6 },
-                { latitude: 9.4030, longitude: -0.8418, intensity: 0.4 }
-            ]
-        },
-        {
-            id: 5,
-            name: "Ashesi University",
-            location: { latitude: 5.7167, longitude: -0.3333 },
-            address: "Berekuso, Accra",
-            crimeHotspots: [
-                { latitude: 5.7167, longitude: -0.3333, intensity: 0.4 },
-                { latitude: 5.7172, longitude: -0.3338, intensity: 0.5 },
-                { latitude: 5.7162, longitude: -0.3328, intensity: 0.3 }
-            ]
-        }
-    ];
 
     const getCurrentLocation = async () => {
         try {
@@ -171,76 +113,144 @@ const HomeScreen = ({ route }) => {
         }
     };
 
-    // Search for campus function
-    const searchCampus = () => {
-        if (!searchQuery.trim()) {
-            setModalData({
-                title: 'Search Error',
-                message: 'Please enter a campus name to search',
-                type: 'error'
-            });
-            setShowModal(true);
+    // Real-time search function
+    const handleSearchInput = (text) => {
+        console.log('Search input changed:', text);
+        setSearchQuery(text);
+        
+        // Clear previous timeout
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+        
+        if (text.trim().length < 1) {
+            console.log('Clearing search results - text too short');
+            setSearchResults([]);
+            setShowSearchResults(false);
             return;
         }
-
-        setIsSearching(true);
         
-        // Simulate search delay
-        setTimeout(() => {
-            const query = searchQuery.toLowerCase().trim();
-            const foundCampus = ghanaCampuses.find(campus => 
-                campus.name.toLowerCase().includes(query) ||
-                campus.address.toLowerCase().includes(query)
-            );
+        // Debounce search to avoid too many calls
+        const timeout = setTimeout(() => {
+            console.log('Starting search for:', text);
+            searchLocation(text);
+        }, 200);
+        
+        setSearchTimeout(timeout);
+    };
 
-            if (foundCampus) {
-                setSelectedCampus(foundCampus);
-                setCampusMarkers([foundCampus]);
-                setHeatmapData(foundCampus.crimeHotspots);
-                setShowRealHeatmap(false); // Switch to search results
-                
-                // Zoom to campus with wider view to show entire campus
-                setMapRegion({
-                    latitude: foundCampus.location.latitude,
-                    longitude: foundCampus.location.longitude,
-                    latitudeDelta: 0.02, // Wider view to show entire campus
-                    longitudeDelta: 0.02
-                });
-
-                // Update real heatmap to focus on this campus if it exists
-                if (heatmapRef.current) {
-                    heatmapRef.current.updateRegion({
-                        latitude: foundCampus.location.latitude,
-                        longitude: foundCampus.location.longitude,
-                        latitudeDelta: 0.02,
-                        longitudeDelta: 0.02
-                    });
-                }
-
-                setModalData({
-                    title: 'Campus Found!',
-                    message: `${foundCampus.name}\n${foundCampus.address}\n\nShowing real incident data and mock hotspots for comparison.`,
-                    type: 'success'
-                });
-                setShowModal(true);
-            } else {
-                setModalData({
-                    title: 'Campus Not Found',
-                    message: 'No campus found with that name. Try searching for:\n\n• University of Ghana\n• KNUST\n• University of Cape Coast\n• UDS\n• Ashesi University',
-                    type: 'error'
-                });
-                setShowModal(true);
-            }
+    // Search for any location using local database
+    const searchLocation = async (query) => {
+        try {
+            setIsSearching(true);
+            console.log('Searching for:', query);
+            
+            // Use local database search first
+            performLocationSearch(query);
+            
+        } catch (error) {
+            console.error('Search error:', error);
+            setSearchResults([]);
+            setShowSearchResults(false);
+        } finally {
             setIsSearching(false);
-        }, 1000);
+        }
+    };
+
+    // Alternative search using known locations
+    const performLocationSearch = (query) => {
+        const commonGhanaLocations = [
+            { name: "University of Ghana", address: "Legon, Accra", lat: 5.6502, lng: -0.1869 },
+            { name: "KNUST", address: "Kumasi", lat: 6.6720, lng: -1.5713 },
+            { name: "University of Cape Coast", address: "Cape Coast", lat: 5.1053, lng: -1.2466 },
+            { name: "University for Development Studies", address: "Tamale", lat: 9.4035, lng: -0.8423 },
+            { name: "Ashesi University", address: "Berekuso, Accra", lat: 5.7167, lng: -0.3333 },
+            { name: "University of Education Winneba", address: "Winneba", lat: 5.3500, lng: -0.6333 },
+            { name: "Central University", address: "Accra", lat: 5.6500, lng: -0.2000 },
+            { name: "Valley View University", address: "Accra", lat: 5.7000, lng: -0.3000 },
+            { name: "Ghana Institute of Management and Public Administration", address: "Accra", lat: 5.6500, lng: -0.2000 },
+            { name: "University of Energy and Natural Resources", address: "Sunyani", lat: 7.3500, lng: -2.3333 },
+            { name: "University of Health and Allied Sciences", address: "Ho", lat: 6.2000, lng: 0.4667 },
+            { name: "University of Mines and Technology", address: "Tarkwa", lat: 5.3000, lng: -2.0000 },
+            { name: "Kumasi Technical University", address: "Kumasi", lat: 6.6720, lng: -1.5723 },
+            { name: "Takoradi Technical University", address: "Takoradi", lat: 4.9000, lng: -1.7833 },
+            { name: "Ho Technical University", address: "Ho", lat: 6.2000, lng: 0.4667 },
+            { name: "Koforidua Technical University", address: "Koforidua", lat: 6.1000, lng: -0.2667 },
+            { name: "Cape Coast Technical University", address: "Cape Coast", lat: 5.1319, lng: -1.2791 }
+        ];
+        
+        const queryLower = query.toLowerCase();
+        const results = commonGhanaLocations
+            .filter(location => {
+                const nameMatch = location.name.toLowerCase().includes(queryLower);
+                const addressMatch = location.address.toLowerCase().includes(queryLower);
+                const cityMatch = location.address.split(',')[0].toLowerCase().includes(queryLower);
+                return nameMatch || addressMatch || cityMatch;
+            })
+            .sort((a, b) => {
+                // Sort by relevance - exact matches first, then partial matches
+                const aNameExact = a.name.toLowerCase() === queryLower;
+                const bNameExact = b.name.toLowerCase() === queryLower;
+                if (aNameExact && !bNameExact) return -1;
+                if (!aNameExact && bNameExact) return 1;
+                
+                const aNameStarts = a.name.toLowerCase().startsWith(queryLower);
+                const bNameStarts = b.name.toLowerCase().startsWith(queryLower);
+                if (aNameStarts && !bNameStarts) return -1;
+                if (!aNameStarts && bNameStarts) return 1;
+                
+                return 0;
+            })
+            .map(location => ({
+                id: location.name,
+                name: location.name,
+                address: location.address,
+                location: { latitude: location.lat, longitude: location.lng },
+                rating: 0,
+                types: ['university']
+            }));
+        
+        console.log('Fallback results:', results);
+        console.log('Setting search results and showing dropdown');
+        setSearchResults(results);
+        setShowSearchResults(true);
+    };
+
+    // Select a search result
+    const selectSearchResult = (result) => {
+        setSelectedCampus(result);
+        setSearchQuery(result.name);
+        setShowSearchResults(false);
+        setShowRealHeatmap(false);
+        
+        // Update map region to show the selected location
+        const newRegion = {
+            latitude: result.location.latitude,
+            longitude: result.location.longitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01
+        };
+        
+        setMapRegion(newRegion);
+        
+        if (heatmapRef.current) {
+            heatmapRef.current.updateRegion(newRegion);
+        }
+        
+        setModalData({
+            title: 'Location Found!',
+            message: `${result.name}\n${result.address}\n\nShowing safety data for this area.`,
+            type: 'success'
+        });
+        setShowModal(true);
     };
 
     // Clear search and return to current location
     const clearSearch = () => {
         setSearchQuery('');
         setSelectedCampus(null);
-        setCampusMarkers([]);
-        setHeatmapData([]);
+        setSearchResults([]);
+        setShowSearchResults(false);
         setShowRealHeatmap(true); // Switch back to real heatmap
         if (markerCoords) {
             setMapRegion({
@@ -280,6 +290,11 @@ const HomeScreen = ({ route }) => {
     const handleMapPress = () => {
         // Dismiss keyboard when map is tapped
         Keyboard.dismiss();
+        
+        // Reset search if we're in search mode
+        if (selectedCampus || showSearchResults) {
+            clearSearch();
+        }
     };
 
     // Handle keyboard dismissal for different platforms
@@ -295,6 +310,15 @@ const HomeScreen = ({ route }) => {
     useEffect(() => {
         getCurrentLocation();
     }, []);
+
+    // Cleanup search timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+        };
+    }, [searchTimeout]);
 
     // Refresh location and incidents when screen comes into focus
     useFocusEffect(
@@ -417,22 +441,21 @@ const darkMapStyle = [
                                 color: theme.text,
                                 borderColor: theme.border
                             }]}
-                            placeholder="Search for a campus in Ghana..."
+                            placeholder="Search for any campus or location..."
                             placeholderTextColor={isDarkMode ? '#888' : '#666'}
                             value={searchQuery}
-                            onChangeText={setSearchQuery}
-                            onSubmitEditing={searchCampus}
+                            onChangeText={handleSearchInput}
                             returnKeyType="search"
                             blurOnSubmit={false}
                         />
                         <TouchableOpacity
                             style={styles.searchIconButton}
-                            onPress={searchCampus}
+                            onPress={() => searchLocation(searchQuery)}
                             disabled={isSearching}
                         >
                             <Icon name={isSearching ? "hourglass" : "search"} size={20} color="#fff" />
                         </TouchableOpacity>
-                        {selectedCampus && (
+                        {(selectedCampus || searchQuery.length > 0) && (
                             <TouchableOpacity
                                 style={styles.clearButton}
                                 onPress={clearSearch}
@@ -443,7 +466,42 @@ const darkMapStyle = [
                     </View>
                 </View>
 
-                <View style={styles.mapContainer}>
+                {/* Search Results Dropdown */}
+                {showSearchResults && searchResults.length > 0 && (
+                    <View style={[styles.searchResultsContainer, { backgroundColor: theme.background }]}>
+                        {searchResults.map((result, index) => (
+                            <TouchableOpacity
+                                key={result.id || index}
+                                style={[styles.searchResultItem, { borderBottomColor: theme.border }]}
+                                onPress={() => selectSearchResult(result)}
+                            >
+                                <View style={styles.searchResultContent}>
+                                    <Text style={[styles.searchResultTitle, { color: theme.text }]}>
+                                        {result.name}
+                                    </Text>
+                                    <Text style={[styles.searchResultAddress, { color: theme.text + '80' }]}>
+                                        {result.address}
+                                    </Text>
+                                    {result.rating > 0 && (
+                                        <View style={styles.searchResultRating}>
+                                            <Icon name="star" size={12} color="#FFD700" />
+                                            <Text style={[styles.searchResultRatingText, { color: theme.text }]}>
+                                                {result.rating.toFixed(1)}
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
+                                <Icon name="chevron-forward" size={16} color={theme.text + '60'} />
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                )}
+
+                <TouchableOpacity 
+                    style={styles.mapContainer}
+                    activeOpacity={1}
+                    onPress={handleMapPress}
+                >
                     {/* Real Safety Heatmap - Always show */}
                     <SafetyHeatmap
                         ref={heatmapRef}
@@ -507,7 +565,7 @@ const darkMapStyle = [
                             </MapView>
                         </TouchableOpacity>
                     )}
-                </View>
+                </TouchableOpacity>
 
             {/* Location refresh button */}
             <TouchableOpacity
@@ -710,5 +768,51 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: Platform.OS === 'ios' ? 0.25 : 0,
     shadowRadius: Platform.OS === 'ios' ? 3.84 : 0,
+  },
+  searchResultsContainer: {
+    position: 'absolute',
+    top: 140,
+    left: 20,
+    right: 20,
+    maxHeight: 200,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    zIndex: 1000,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  searchResultItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 15,
+    borderBottomWidth: 1,
+  },
+  searchResultContent: {
+    flex: 1,
+  },
+  searchResultTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Montserrat-Bold',
+    marginBottom: 4,
+  },
+  searchResultAddress: {
+    fontSize: 14,
+    fontFamily: 'Montserrat-Regular',
+    marginBottom: 4,
+  },
+  searchResultRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  searchResultRatingText: {
+    fontSize: 12,
+    fontFamily: 'Montserrat-Regular',
   },
 })

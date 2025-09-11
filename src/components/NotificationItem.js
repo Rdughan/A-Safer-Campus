@@ -8,20 +8,29 @@ const NotificationItem = ({ item }) => {
   
   // Enhanced color scheme for better contrast
   const getStatusColor = (status) => {
-    if (status.toLowerCase().includes('fire') || status.toLowerCase().includes('outbreak')) {
+    if (!status || typeof status !== 'string') {
+      return isDarkMode ? '#239DD6' : '#239DD6'; // Default blue for invalid status
+    }
+    
+    const statusLower = status.toLowerCase();
+    if (statusLower.includes('fire') || statusLower.includes('outbreak')) {
       return isDarkMode ? '#FF6B6B' : '#FF4444'; // Red for fire/emergency
-    } else if (status.toLowerCase().includes('arrested') || status.toLowerCase().includes('failed')) {
+    } else if (statusLower.includes('arrested') || statusLower.includes('failed')) {
       return isDarkMode ? '#4ECDC4' : '#00C851'; // Green for resolved/safe
-    } else if (status.toLowerCase().includes('missing') || status.toLowerCase().includes('alert')) {
+    } else if (statusLower.includes('missing') || statusLower.includes('alert')) {
       return isDarkMode ? '#FFD93D' : '#FF9800'; // Orange/Yellow for alerts
     } else {
       return isDarkMode ? '#239DD6' : '#239DD6'; // Default blue
     }
   };
   
-  // Get priority color based on title content
+  // Get priority color based on priority level
   const getPriorityColor = (priority) => {
-    switch (priority) {
+    if (!priority || typeof priority !== 'string') {
+      return isDarkMode ? '#239DD6' : '#239DD6'; // Default blue for invalid priority
+    }
+    
+    switch (priority.toLowerCase()) {
       case 'high':
         return '#ff0000'; // High priority - red
       case 'medium':
@@ -47,26 +56,26 @@ const NotificationItem = ({ item }) => {
       {/* Priority indicator line */}
       <View style={[
         styles.priorityIndicator,
-        { backgroundColor: getPriorityColor(item.title) }
+        { backgroundColor: getPriorityColor(item.priority) }
       ]} />
       
       <Image 
-        source={item.image} 
+        source={item.image || require('../components/notifScreenMedia/fire.png')} 
         style={styles.fireIcon}
       />
       <View style={styles.details}>
-        <Text style={[styles.heading, { color: theme.text }]}>{item.title}</Text>
+        <Text style={[styles.heading, { color: theme.text }]}>{item.title || 'Unknown Notification'}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -5 }}>
           <Ionicons 
             name="location-outline" 
             size={17} 
             color={isDarkMode ? '#239DD6' : '#239DD6'} 
           />
-          <Text style={[styles.location, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>{item.location}</Text>
+          <Text style={[styles.location, { color: isDarkMode ? '#CCCCCC' : '#666666' }]}>{item.location || 'Unknown Location'}</Text>
         </View>
-        <Text style={[styles.status, { color: getStatusColor(item.status) }]}>{item.status}</Text>
+        <Text style={[styles.status, { color: getStatusColor(item.status) }]}>{item.status || 'Unknown Status'}</Text>
       </View>
-      <Text style={[styles.time, { color: isDarkMode ? '#888' : '#666' }]}>{item.time}</Text>
+      <Text style={[styles.time, { color: isDarkMode ? '#888' : '#666' }]}>{item.time || 'Unknown Time'}</Text>
     </View>
     </TouchableOpacity>
   );
