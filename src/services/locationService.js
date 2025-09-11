@@ -177,32 +177,39 @@ const extractLocationName = (location) => {
   return 'Unknown Location';
 };
 
-// Format display name with context
+// Format display name with context, preferring a human place name and prefixing with "Near"
 const formatDisplayName = (location) => {
-  const parts = [];
-  
-  // Add specific location identifier
+  // Choose the most human-friendly anchor
+  let anchor = null;
   if (location.name) {
-    parts.push(location.name);
+    anchor = location.name;
   } else if (location.street) {
-    if (location.streetNumber) {
-      parts.push(`${location.streetNumber} ${location.street}`);
-    } else {
-      parts.push(location.street);
-    }
+    anchor = location.streetNumber ? `${location.streetNumber} ${location.street}` : location.street;
+  } else if (location.district) {
+    anchor = location.district;
+  } else if (location.subregion) {
+    anchor = location.subregion;
+  } else if (location.city) {
+    anchor = location.city;
+  } else if (location.region) {
+    anchor = location.region;
   }
-  
-  // Add area context
-  if (location.district && !parts.some(part => part.includes(location.district))) {
-    parts.push(location.district);
+
+  // Build contextual suffix (avoid duplicates)
+  const contextParts = [];
+  if (location.district && (!anchor || !String(anchor).includes(location.district))) {
+    contextParts.push(location.district);
   }
-  
-  // Add city context if not already included
-  if (location.city && !parts.some(part => part.includes(location.city))) {
-    parts.push(location.city);
+  if (location.city && (!anchor || !String(anchor).includes(location.city))) {
+    contextParts.push(location.city);
   }
-  
-  return parts.length > 0 ? parts.join(', ') : 'Unknown Location';
+
+  const context = contextParts.length > 0 ? ` (${contextParts.join(', ')})` : '';
+  const base = anchor ? `${anchor}${context}` : 'this area';
+
+  // Ensure single "Near" prefix
+  const normalized = base.trim().toLowerCase().startsWith('near ') ? base : `Near ${base}`;
+  return normalized;
 };
 
 // Format full address
@@ -281,12 +288,18 @@ export const formatLocationName = async (latitude, longitude, customLocation = n
         const locationDetails = await getLocationDetails(latitude, longitude);
         if (locationDetails.city || locationDetails.district) {
           const context = locationDetails.city || locationDetails.district;
-          return `${customLocation.trim()} (${context})`;
+          const anchor = customLocation.trim();
+          return anchor.toLowerCase().startsWith('near ')
+            ? `${anchor} (${context})`
+            : `Near ${anchor} (${context})`;
         }
       } catch (error) {
         console.error('Error getting location context:', error);
       }
-      return customLocation.trim();
+      const anchor = customLocation.trim();
+      return anchor.toLowerCase().startsWith('near ')
+        ? anchor
+        : `Near ${anchor}`;
     }
   }
 
@@ -296,11 +309,7 @@ export const formatLocationName = async (latitude, longitude, customLocation = n
     return locationDetails.displayName;
   } catch (error) {
     console.error('Error formatting location name:', error);
-    if (latitude && longitude) {
-      return `Location: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-    } else {
-      return "Unknown Location";
-    }
+    return 'Near this area';
   }
 };
 

@@ -64,7 +64,12 @@ const NotificationItem = ({ item }) => {
         style={styles.fireIcon}
       />
       <View style={styles.details}>
-        <Text style={[styles.heading, { color: theme.text }]}>{item.title || 'Unknown Notification'}</Text>
+        <View style={styles.headerRow}>
+          <Text style={[styles.heading, { color: theme.text }]} numberOfLines={2}>
+            {item.title || 'Unknown Notification'}
+          </Text>
+          <Text style={[styles.time, { color: isDarkMode ? '#888' : '#666' }]}>{item.time || 'Unknown Time'}</Text>
+        </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: -5 }}>
           <Ionicons 
             name="location-outline" 
@@ -75,7 +80,6 @@ const NotificationItem = ({ item }) => {
         </View>
         <Text style={[styles.status, { color: getStatusColor(item.status) }]}>{item.status || 'Unknown Status'}</Text>
       </View>
-      <Text style={[styles.time, { color: isDarkMode ? '#888' : '#666' }]}>{item.time || 'Unknown Time'}</Text>
     </View>
     </TouchableOpacity>
   );
@@ -118,10 +122,18 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 10,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
   heading: {
     fontFamily: 'Montserrat-Bold',
     fontSize: 13,
     lineHeight: 18,
+    flex: 1,
+    marginRight: 8,
   },
   location: {
     fontFamily: 'Montserrat-Regular',
@@ -137,10 +149,7 @@ const styles = StyleSheet.create({
   time: {
     fontFamily: 'Montserrat-Regular',
     fontSize: 11,
-    alignSelf: 'flex-start',
-    position: 'absolute',
-    right: 15,
-    top: 15,
+    marginLeft: 8,
     opacity: 0.8,
   },
 });
