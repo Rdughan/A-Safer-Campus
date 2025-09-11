@@ -122,7 +122,6 @@ const SettingsScreen = ({ navigation }) => {
    
     <Text style={[styles.sectionName, { color: theme.text }]}>FEEDBACK</Text>
         <SettingsOption iconName="warning-outline" label="Report a bug" onPress={() => navigation.navigate('ReportBugScreen')} />
-        <SettingsOption iconName="share-outline" label="Send Feedback" onPress={() => {}}/>
         
         
        <TouchableOpacity 

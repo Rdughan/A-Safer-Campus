@@ -322,9 +322,6 @@ export default function RoleBasedDashboard({ navigation }) {
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Overview</Text>
           <View style={styles.statsGrid}>
             {renderStatsCard('Total', stats.total, 'list-outline', getRoleColor(userRole))}
-            {renderStatsCard('Reported', stats.reported, 'document-text-outline', '#FF9800')}
-            {renderStatsCard('In Progress', stats.inProgress, 'time-outline', '#239DD6')}
-            {renderStatsCard('Resolved', stats.resolved, 'checkmark-circle-outline', '#239DD6')}
           </View>
         </View>
 
@@ -335,7 +332,6 @@ export default function RoleBasedDashboard({ navigation }) {
             {[
               { key: 'all', label: 'All', icon: 'list-outline' },
               { key: 'my', label: 'My Reports', icon: 'person-outline' },
-              { key: 'assigned', label: 'Assigned', icon: 'briefcase-outline' }
             ].map(filter => (
               <TouchableOpacity
                 key={filter.key}
@@ -460,7 +456,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    width: (width - 60) / 2,
+    width: '100%',
     borderLeftWidth: 4,
     elevation: 2,
     shadowColor: '#000',

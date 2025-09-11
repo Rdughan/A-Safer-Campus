@@ -481,10 +481,6 @@ export default function ReportIncidentScreen({ navigation }) {
           />
         )}
 
-        <View style={styles.toggleRow}>
-          <Text style={[styles.label, { color: theme.text }]}>Send to Authorities</Text>
-          <Switch value={sendToAuthorities} onValueChange={setSendToAuthorities} />
-        </View>
 
         <Animated.View style={{ transform: [{ scale: showSubmitAnimation }] }}>
           <TouchableOpacity 

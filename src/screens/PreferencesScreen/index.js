@@ -90,28 +90,6 @@ const PreferencesScreen = ({ navigation, route }) => {
           />
         </View>
 
-        <Text style={[styles.sectionName, { color: theme.text }]}>CUSTOMIZATION</Text>
-
-        <TouchableOpacity
-          style={styles.linkButton}
-          onPress={() => Alert.alert('Feature coming soon')}
-        >
-          <Text style={[styles.linkText, { color: theme.primary }]}>Change Language</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.linkButton}
-          onPress={() => Alert.alert('Set preferred location')}
-        >
-          <Text style={[styles.linkText, { color: theme.primary }]}>Set Default Location</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.linkButton}
-          onPress={() => Alert.alert('Choose how to report crimes')}
-        >
-          <Text style={[styles.linkText, { color: theme.primary }]}>Crime Reporting Preferences</Text>
-        </TouchableOpacity>
       </ScrollView>
     </View>
   );
