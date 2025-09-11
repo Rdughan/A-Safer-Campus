@@ -221,7 +221,7 @@ const HomeScreen = ({ route }) => {
         setSelectedCampus(result);
         setSearchQuery(result.name);
         setShowSearchResults(false);
-        setShowRealHeatmap(false);
+        setShowRealHeatmap(true); // Keep showing the real heatmap
         
         // Update map region to show the selected location
         const newRegion = {
@@ -291,9 +291,9 @@ const HomeScreen = ({ route }) => {
         // Dismiss keyboard when map is tapped
         Keyboard.dismiss();
         
-        // Reset search if we're in search mode
-        if (selectedCampus || showSearchResults) {
-            clearSearch();
+        // Only clear search if we're showing search results dropdown
+        if (showSearchResults) {
+            setShowSearchResults(false);
         }
     };
 
@@ -510,6 +510,7 @@ const darkMapStyle = [
                         timeFilter="all"
                         userLocation={markerCoords}
                         showMarkers={false}
+                        selectedCampus={selectedCampus}
                         initialRegion={mapRegion || {
                             latitude: 6.673175, 
                             longitude: -1.565423,
@@ -571,7 +572,8 @@ const darkMapStyle = [
             <TouchableOpacity
                 style={styles.refreshButton}
                 onPress={() => {
-                    // Get current location instead of going to KNUST
+                    // Clear search and return to current location
+                    clearSearch();
                     getCurrentLocation();
                 }}
                 disabled={isLoadingLocation}
