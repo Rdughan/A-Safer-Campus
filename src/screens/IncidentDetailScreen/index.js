@@ -10,6 +10,7 @@ import { roleService } from '../../services/roleService';
 import { notificationService } from '../../services/notificationService';
 import { USER_ROLES, INCIDENT_TYPES } from '../../config/supabase';
 import { AuthContext } from '../../context/AuthContext';
+import { formatLocationName } from '../../services/locationService';
 
 const { width } = Dimensions.get('window');
 
@@ -257,7 +258,7 @@ export default function IncidentDetailScreen({ route, navigation }) {
           </View>
           {incident.latitude && incident.longitude && (
             <Text style={styles.coordinatesText}>
-              Coordinates: {incident.latitude.toFixed(6)}, {incident.longitude.toFixed(6)}
+              {formatLocationName(incident.latitude, incident.longitude, incident.location_description)}
             </Text>
           )}
         </View>

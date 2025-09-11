@@ -60,7 +60,7 @@ const NotificationItem = ({ item }) => {
       ]} />
       
       <Image 
-        source={item.image || require('../components/notifScreenMedia/fire.png')} 
+        source={item.image || require('./notifScreenMedia/fire.png')} 
         style={styles.fireIcon}
       />
       <View style={styles.details}>

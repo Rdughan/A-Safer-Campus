@@ -11,6 +11,7 @@ import { notificationService } from '../../services/notificationService';
 import { USER_ROLES, INCIDENT_TYPES } from '../../config/supabase';
 import { AuthContext } from '../../context/AuthContext';
 import { useTheme } from '../../hooks/useTheme';
+import { formatLocationName } from '../../services/locationService';
 
 const { width } = Dimensions.get('window');
 
@@ -90,7 +91,27 @@ export default function RoleBasedDashboard({ navigation }) {
       // Filter incidents based on user role
       const filteredIncidents = filterIncidentsByRole(incidentsData, userRole);
       console.log('Filtered incidents:', filteredIncidents.length, 'incidents');
-      setIncidents(filteredIncidents);
+
+      // Compute friendly display location using reverse geocoding
+      const incidentsWithDisplay = await Promise.all(
+        filteredIncidents.map(async (inc) => {
+          try {
+            if (inc?.latitude && inc?.longitude) {
+              const friendly = await formatLocationName(
+                inc.latitude,
+                inc.longitude,
+                inc.location_description
+              );
+              return { ...inc, displayLocation: friendly };
+            }
+          } catch (e) {
+            // fall through to fallback below
+          }
+          return { ...inc, displayLocation: inc.location_description || 'Unknown Location' };
+        })
+      );
+
+      setIncidents(incidentsWithDisplay);
 
       // Calculate stats
       const statsData = calculateStats(filteredIncidents);
@@ -275,7 +296,7 @@ export default function RoleBasedDashboard({ navigation }) {
       
       <View style={styles.incidentFooter}>
         <Text style={styles.incidentLocation}>
-          <Ionicons name="location-outline" size={14} /> {incident.location_description}
+          <Ionicons name="location-outline" size={14} /> {incident.displayLocation || incident.location_description || 'Unknown Location'}
         </Text>
         <Text style={styles.incidentTime}>
           {new Date(incident.reported_at).toLocaleDateString()}

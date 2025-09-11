@@ -15,6 +15,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { useTheme } from '../../hooks/useTheme';
 import CustomButton from '../../components/CustomButton';
 import LocationPickerModal from '../../components/LocationPickerModal';
+import { formatLocationName } from '../../services/locationService';
 
 const INCIDENT_TYPE_OPTIONS = [
   { label: 'Snake Bite', value: INCIDENT_TYPES.SNAKE_BITE },
@@ -244,7 +245,8 @@ export default function ReportIncidentScreen({ navigation }) {
 
   const handleLocationSelect = (coordinates) => {
     setSelectedCoordinates(coordinates);
-    setLocation(`Lat: ${coordinates.latitude.toFixed(6)}, Lng: ${coordinates.longitude.toFixed(6)}`);
+    const locationName = formatLocationName(coordinates.latitude, coordinates.longitude);
+    setLocation(locationName);
   };
 
   const handleSubmit = async () => {

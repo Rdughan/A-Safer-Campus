@@ -5,6 +5,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { incidentService } from '../services/incidentService';
 import { AuthContext } from '../context/AuthContext';
 import { useTheme } from '../hooks/useTheme';
+import { formatLocationName } from '../services/locationService';
 
 const SafetyHeatmap = forwardRef(({ 
   style, 
@@ -162,7 +163,7 @@ const SafetyHeatmap = forwardRef(({
 
       console.log('Final filtered incidents:', filteredIncidents.length);
       
-      // Only show real incidents, no mock data
+      // Do not precompute reverse geocoding (rate limits). Store raw incidents; compute lazily when needed.
       setIncidents(filteredIncidents);
 
       // Only update map region if we have a selected campus and no user location
@@ -315,17 +316,43 @@ const SafetyHeatmap = forwardRef(({
     });
   };
 
+  // Sanitize any description that embeds raw coordinates into a landmark-based phrase
+  const sanitizeDescription = (incident) => {
+    const raw = incident?.description?.trim();
+    if (!raw) return null;
+    const looksLikeCoords = /Lat:\s*\d+\.\d+\s*,\s*Lng:\s*-?\d+\.\d+|^\d+\.\d+\s*,\s*-?\d+\.\d+$/i.test(raw);
+    if (looksLikeCoords || /reported at\s*lat/i.test(raw)) {
+      const readable = incident?.friendlyLocation || incident?.location_description || 'Unknown Location';
+      return `Reported at ${readable}`;
+    }
+    return raw;
+  };
+
   // Handle incident marker press
-  const handleIncidentPress = (incident) => {
-    setSelectedIncident(incident);
+  const handleIncidentPress = async (incident) => {
+    let friendlyLocation = incident.friendlyLocation;
+    if (!friendlyLocation && incident?.latitude && incident?.longitude) {
+      try {
+        friendlyLocation = await formatLocationName(
+          incident.latitude,
+          incident.longitude,
+          incident.location_description
+        );
+      } catch (e) {
+        friendlyLocation = incident.location_description || 'Unknown Location';
+      }
+    }
+
+    const withFriendly = { ...incident, friendlyLocation };
+    setSelectedIncident(withFriendly);
     setShowIncidentModal(true);
     if (onIncidentPress) {
-      onIncidentPress(incident);
+      onIncidentPress(withFriendly);
     }
   };
 
   // Handle cluster marker press
-  const handleClusterPress = (group) => {
+  const handleClusterPress = async (group) => {
     // Show details for the cluster
     const clusterInfo = {
       ...group,
@@ -335,7 +362,24 @@ const SafetyHeatmap = forwardRef(({
         new Date(b.reported_at) - new Date(a.reported_at)
       )[0]
     };
-    setSelectedIncident(clusterInfo);
+    // Lazily compute friendly names for incidents in the cluster (throttled by service)
+    try {
+      const enhancedIncidents = await Promise.all(
+        clusterInfo.incidents.map(async (inc) => {
+          if (inc.friendlyLocation || !inc.latitude || !inc.longitude) return inc;
+          try {
+            const friendly = await formatLocationName(inc.latitude, inc.longitude, inc.location_description);
+            return { ...inc, friendlyLocation: friendly };
+          } catch (_) {
+            return { ...inc, friendlyLocation: inc.location_description || 'Unknown Location' };
+          }
+        })
+      );
+      const enhancedMostRecent = enhancedIncidents.find(i => i.id === clusterInfo.mostRecentIncident.id) || clusterInfo.mostRecentIncident;
+      setSelectedIncident({ ...clusterInfo, incidents: enhancedIncidents, mostRecentIncident: enhancedMostRecent });
+    } catch (e) {
+      setSelectedIncident(clusterInfo);
+    }
     setShowIncidentModal(true);
   };
 
@@ -460,7 +504,7 @@ const SafetyHeatmap = forwardRef(({
               longitude: incident.longitude,
             }}
             title={incident.title || `${incident.incident_type?.replace('_', ' ')} Incident`}
-            description={incident.description || `Reported at ${incident.location_description || 'Unknown Location'}`}
+            description={sanitizeDescription(incident) || `Reported at ${incident.friendlyLocation || incident.location_description || 'Unknown Location'}`}
             pinColor={getIncidentColor(incident.incident_type)}
             onPress={() => handleIncidentPress(incident)}
           />
@@ -578,7 +622,7 @@ const SafetyHeatmap = forwardRef(({
                     </Text>
                     {selectedIncident.mostRecentIncident?.location_description && (
                       <Text style={[styles.modalText, { color: theme.text }]}>
-                        Location: {selectedIncident.mostRecentIncident.location_description}
+                        Location: {selectedIncident.mostRecentIncident.friendlyLocation || selectedIncident.mostRecentIncident.location_description}
                       </Text>
                     )}
                   </View>
@@ -595,14 +639,14 @@ const SafetyHeatmap = forwardRef(({
                             {incident.title}
                           </Text>
                         )}
-                        {incident.description && (
+                        {sanitizeDescription(incident) && (
                           <Text style={[styles.incidentDescription, { color: theme.textSecondary }]}>
-                            {incident.description}
+                            {sanitizeDescription(incident)}
                           </Text>
                         )}
                         {incident.location_description && (
                           <Text style={[styles.incidentLocation, { color: theme.textSecondary }]}>
-                            📍 {incident.location_description}
+                            📍 {incident.friendlyLocation || incident.location_description}
                           </Text>
                         )}
                       </View>
@@ -641,7 +685,7 @@ const SafetyHeatmap = forwardRef(({
                     <View style={styles.modalSection}>
                       <Text style={[styles.modalSectionTitle, { color: theme.text }]}>Location</Text>
                       <Text style={[styles.modalText, { color: theme.text }]}>
-                        📍 {selectedIncident.location_description}
+                        📍 {selectedIncident.friendlyLocation || selectedIncident.location_description}
                       </Text>
                     </View>
                   )}
