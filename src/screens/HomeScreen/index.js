@@ -129,11 +129,17 @@ const HomeScreen = ({ route }) => {
             };
             
             setMarkerCoords(newCoords);
-            setMapRegion({
+            const newRegion = {
                 ...newCoords,
                 latitudeDelta: 0.01,
                 longitudeDelta: 0.01
-            });
+            };
+            setMapRegion(newRegion);
+            
+            // Update the heatmap region immediately
+            if (heatmapRef.current) {
+                heatmapRef.current.updateRegion(newRegion);
+            }
             
             // Clear any previous error messages
             setErrorMsg(null);
@@ -147,11 +153,17 @@ const HomeScreen = ({ route }) => {
             };
             
             setMarkerCoords(fallbackLocation);
-            setMapRegion({
+            const fallbackRegion = {
                 ...fallbackLocation,
                 latitudeDelta: 0.01,
                 longitudeDelta: 0.01
-            });
+            };
+            setMapRegion(fallbackRegion);
+            
+            // Update the heatmap region immediately
+            if (heatmapRef.current) {
+                heatmapRef.current.updateRegion(fallbackRegion);
+            }
             
             setErrorMsg('Using fallback location (KNUST)');
         } finally {
@@ -284,24 +296,17 @@ const HomeScreen = ({ route }) => {
         getCurrentLocation();
     }, []);
 
-    // Update map region when marker coordinates change
-    useEffect(() => {
-        if (markerCoords) {
-            setMapRegion({
-                ...markerCoords,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01
-            });
-        }
-    }, [markerCoords]);
-
-    // Refresh location when screen comes into focus
+    // Refresh location and incidents when screen comes into focus
     useFocusEffect(
         React.useCallback(() => {
             // Small delay to ensure the screen is fully loaded
             const timer = setTimeout(() => {
                 if (!markerCoords) {
                     getCurrentLocation();
+                }
+                // Refresh the heatmap to show new incidents
+                if (heatmapRef.current) {
+                    heatmapRef.current.refresh();
                 }
             }, 500);
             
@@ -446,6 +451,7 @@ const darkMapStyle = [
                         showHeatmap={true}
                         timeFilter="all"
                         userLocation={markerCoords}
+                        showMarkers={false}
                         initialRegion={mapRegion || {
                             latitude: 6.673175, 
                             longitude: -1.565423,
@@ -479,26 +485,7 @@ const darkMapStyle = [
                                 onRegionChangeComplete={handleMapDragEnd}
                                 onPress={handleMapPress}
                             >
-                                {/* Custom marker for user location */}
-                                {markerCoords && (
-                                    <Marker
-                                        coordinate={markerCoords}
-                                        title="Your Current Location"
-                                        description="You are here"
-                                        pinColor="blue"
-                                    />
-                                )}
-
-                                {/* Campus markers */}
-                                {campusMarkers.map((campus) => (
-                                    <Marker
-                                        key={campus.id}
-                                        coordinate={campus.location}
-                                        title={campus.name}
-                                        description={campus.address}
-                                        pinColor="red"
-                                    />
-                                ))}
+                                {/* No pin markers on home screen - only user location dot and direction */}
 
                                 {/* Crime hotspots heatmap from search */}
                                 {heatmapData.length > 0 && (
@@ -526,17 +513,8 @@ const darkMapStyle = [
             <TouchableOpacity
                 style={styles.refreshButton}
                 onPress={() => {
-                    const knustLocation = {
-                        latitude: 6.6720, // KNUST College of Science coordinates
-                        longitude: -1.5713,
-                    };
-                    setMarkerCoords(knustLocation);
-                    setMapRegion({
-                        ...knustLocation,
-                        latitudeDelta: 0.01,
-                        longitudeDelta: 0.01,
-                    });
-                    setErrorMsg(null); // Clear any previous error messages
+                    // Get current location instead of going to KNUST
+                    getCurrentLocation();
                 }}
                 disabled={isLoadingLocation}
             >

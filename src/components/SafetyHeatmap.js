@@ -1,6 +1,7 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle, useContext } from 'react';
-import { View, StyleSheet, Text, ActivityIndicator, Alert } from 'react-native';
+import { View, StyleSheet, Text, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import MapView, { Heatmap, PROVIDER_GOOGLE, Marker } from 'react-native-maps';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { incidentService } from '../services/incidentService';
 import { AuthContext } from '../context/AuthContext';
 import { useTheme } from '../hooks/useTheme';
@@ -12,20 +13,16 @@ const SafetyHeatmap = forwardRef(({
   showHeatmap = true,
   timeFilter = null, // 'today', 'week', 'month', 'all'
   selectedCampus = null,
-  userLocation = null
+  userLocation = null,
+  showMarkers = true // New prop to control marker display
 }, ref) => {
   const { user } = useContext(AuthContext);
   const { theme } = useTheme();
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [region, setRegion] = useState(
-    initialRegion || {
-      latitude: 6.6735, // Default to KNUST College of Science coordinates
-      longitude: -1.5718,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
-    }
-  );
+  const [region, setRegion] = useState(null);
+  const [regionInitialized, setRegionInitialized] = useState(false);
+  const [legendCollapsed, setLegendCollapsed] = useState(false);
 
   // Expose refresh and updateRegion methods to parent component
   useImperativeHandle(ref, () => ({
@@ -35,14 +32,58 @@ const SafetyHeatmap = forwardRef(({
     }
   }));
 
-  // Update region when userLocation or initialRegion changes (only once)
+  // Initialize region with user location, initial region, or default
   useEffect(() => {
-    if (userLocation && !region) {
-      setRegion(userLocation);
-    } else if (initialRegion && !region) {
-      setRegion(initialRegion);
+    if (!regionInitialized) {
+      if (userLocation) {
+        setRegion({
+          ...userLocation,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        });
+        setRegionInitialized(true);
+      } else if (initialRegion) {
+        setRegion(initialRegion);
+        setRegionInitialized(true);
+      } else {
+        // Default to KNUST if no location available
+        setRegion({
+          latitude: 6.6735,
+          longitude: -1.5718,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        });
+        setRegionInitialized(true);
+      }
     }
-  }, [userLocation, initialRegion, region]);
+  }, [userLocation, initialRegion, regionInitialized]);
+
+  // Update region when userLocation changes (only if not already initialized with user location)
+  useEffect(() => {
+    if (userLocation && regionInitialized) {
+      // Only update if the user location is significantly different
+      if (region) {
+        const latDiff = Math.abs(userLocation.latitude - region.latitude);
+        const lngDiff = Math.abs(userLocation.longitude - region.longitude);
+        
+        // Only update if the change is significant (more than 0.001 degrees)
+        if (latDiff > 0.001 || lngDiff > 0.001) {
+          setRegion({
+            ...userLocation,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          });
+        }
+      } else {
+        setRegion({
+          ...userLocation,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        });
+      }
+    }
+  }, [userLocation, regionInitialized, region]);
+
 
   // Fetch incidents from Supabase
   const fetchIncidents = async () => {
@@ -119,65 +160,17 @@ const SafetyHeatmap = forwardRef(({
 
       console.log('Final filtered incidents:', filteredIncidents.length);
       
-      // If no incidents found, show some mock data for demonstration
-      if (filteredIncidents.length === 0) {
-        const mockIncidents = [
-          {
-            id: 'mock-1',
-            incident_type: 'snake_bite',
-            latitude: 6.6735,
-            longitude: -1.5718,
-            title: 'Snake spotted near Unity Hall',
-            reported_at: new Date().toISOString(),
-            status: 'reported'
-          },
-          {
-            id: 'mock-2',
-            incident_type: 'theft',
-            latitude: 6.6740,
-            longitude: -1.5720,
-            title: 'Laptop stolen from library',
-            reported_at: new Date().toISOString(),
-            status: 'investigating'
-          },
-          {
-            id: 'mock-3',
-            incident_type: 'fire_attack',
-            latitude: 6.6730,
-            longitude: -1.5715,
-            title: 'Small fire in engineering block',
-            reported_at: new Date().toISOString(),
-            status: 'resolved'
-          }
-        ];
-        setIncidents(mockIncidents);
-        console.log('Using mock incidents for demonstration');
-      } else {
-        setIncidents(filteredIncidents);
-      }
+      // Only show real incidents, no mock data
+      setIncidents(filteredIncidents);
 
-      // Update map region if we have incidents or a selected campus (only if no region is set)
-      if (selectedCampus && !region) {
+      // Only update map region if we have a selected campus and no user location
+      // Don't auto-update region based on incidents to avoid jumping around
+      if (selectedCampus && !userLocation && !region) {
         setRegion({
           latitude: selectedCampus.latitude,
           longitude: selectedCampus.longitude,
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
-        });
-      } else if (filteredIncidents.length > 0 && !region) {
-        const lats = filteredIncidents.map(i => i.latitude);
-        const lngs = filteredIncidents.map(i => i.longitude);
-        
-        const minLat = Math.min(...lats);
-        const maxLat = Math.max(...lats);
-        const minLng = Math.min(...lngs);
-        const maxLng = Math.max(...lngs);
-        
-        setRegion({
-          latitude: (minLat + maxLat) / 2,
-          longitude: (minLng + maxLng) / 2,
-          latitudeDelta: (maxLat - minLat) * 1.2,
-          longitudeDelta: (maxLng - minLng) * 1.2,
         });
       }
     } catch (error) {
@@ -252,11 +245,12 @@ const SafetyHeatmap = forwardRef(({
   // Group incidents by type and location for better visualization
   const groupedIncidents = groupIncidentsByTypeAndLocation(incidents);
 
-  // Convert incidents to heatmap points with clustering
+  // Convert incidents to heatmap points with distinct colors for each type
   const heatmapPoints = incidents.map(incident => ({
     latitude: incident.latitude,
     longitude: incident.longitude,
     weight: getIncidentWeight(incident.incident_type),
+    color: getIncidentColor(incident.incident_type),
   }));
 
   if (loading) {
@@ -275,12 +269,24 @@ const SafetyHeatmap = forwardRef(({
       <MapView
         provider={PROVIDER_GOOGLE}
         style={styles.map}
-        region={region}
+        region={region || {
+          latitude: 6.6735,
+          longitude: -1.5718,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }}
         onRegionChangeComplete={(newRegion) => {
-          // Only update if the change is significant to prevent constant updates
-          const latDiff = Math.abs(newRegion.latitude - region.latitude);
-          const lngDiff = Math.abs(newRegion.longitude - region.longitude);
-          if (latDiff > 0.001 || lngDiff > 0.001) {
+          // Only update if there's a significant change to prevent constant updates
+          if (region) {
+            const latDiff = Math.abs(newRegion.latitude - region.latitude);
+            const lngDiff = Math.abs(newRegion.longitude - region.longitude);
+            
+            // Only update if the change is significant (user manually moved map)
+            // Use a smaller threshold to be more responsive to user input
+            if (latDiff > 0.001 || lngDiff > 0.001) {
+              setRegion(newRegion);
+            }
+          } else {
             setRegion(newRegion);
           }
         }}
@@ -289,8 +295,8 @@ const SafetyHeatmap = forwardRef(({
         showsCompass={true}
         showsScale={true}
       >
-        {/* User Location Marker */}
-        {userLocation && (
+        {/* User Location Marker - only show if showMarkers is true */}
+        {showMarkers && userLocation && (
           <Marker
             coordinate={{
               latitude: userLocation.latitude,
@@ -303,8 +309,8 @@ const SafetyHeatmap = forwardRef(({
           />
         )}
 
-        {/* Campus Marker */}
-        {selectedCampus && (
+        {/* Campus Marker - only show if showMarkers is true */}
+        {showMarkers && selectedCampus && (
           <Marker
             coordinate={{
               latitude: selectedCampus.latitude,
@@ -316,8 +322,22 @@ const SafetyHeatmap = forwardRef(({
           />
         )}
 
-        {/* Clustered Incident Markers */}
-        {!showHeatmap && Object.values(groupedIncidents).flat().map((group, index) => (
+        {/* Individual Incident Markers - show when markers are enabled */}
+        {showMarkers && incidents.map((incident, index) => (
+          <Marker
+            key={`incident-${incident.id || index}`}
+            coordinate={{
+              latitude: incident.latitude,
+              longitude: incident.longitude,
+            }}
+            title={incident.title || `${incident.incident_type?.replace('_', ' ')} Incident`}
+            description={incident.description || `Reported at ${incident.location_description || 'Unknown Location'}`}
+            pinColor={getIncidentColor(incident.incident_type)}
+          />
+        ))}
+
+        {/* Clustered Incident Markers - only show if showMarkers is true and not showing individual markers */}
+        {showMarkers && !showHeatmap && Object.values(groupedIncidents).flat().map((group, index) => (
           <Marker
             key={`group-${index}`}
             coordinate={{
@@ -344,41 +364,54 @@ const SafetyHeatmap = forwardRef(({
         ))}
 
         {showHeatmap && heatmapPoints.length > 0 && (
-          <Heatmap
-            points={heatmapPoints}
-            radius={50}
-            opacity={0.7}
-            gradient={{
-              colors: ['#00ff00', '#ffff00', '#ff0000'],
-              startPoints: [0.2, 0.5, 0.8],
-              colorMapSize: 2000,
-            }}
-          />
+          <>
+            {/* Create separate heatmaps for each incident type with distinct colors */}
+            {Object.entries(
+              incidents.reduce((acc, incident) => {
+                const type = incident.incident_type;
+                if (!acc[type]) acc[type] = [];
+                acc[type].push({
+                  latitude: incident.latitude,
+                  longitude: incident.longitude,
+                  weight: getIncidentWeight(incident.incident_type),
+                });
+                return acc;
+              }, {})
+            ).map(([incidentType, points]) => (
+              <Heatmap
+                key={incidentType}
+                points={points}
+                radius={50}
+                opacity={0.7}
+                gradient={{
+                  colors: [getIncidentColor(incidentType) + '40', getIncidentColor(incidentType) + '80', getIncidentColor(incidentType)],
+                  startPoints: [0.2, 0.6, 1.0],
+                  colorMapSize: 1000,
+                }}
+              />
+            ))}
+          </>
         )}
       </MapView>
       
-      {/* Legend */}
-      {incidents.length > 0 && (
-        <View style={[styles.legend, { backgroundColor: theme.card + 'E6' }]}>
-          <Text style={[styles.legendTitle, { color: theme.text }]}>
-            {showHeatmap ? 'Safety Heatmap' : 'Incident Types'}
-          </Text>
-          {showHeatmap ? (
-            <View style={styles.legendItems}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendColor, { backgroundColor: '#00ff00' }]} />
-                <Text style={[styles.legendText, { color: theme.text }]}>Low Risk</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendColor, { backgroundColor: '#ffff00' }]} />
-                <Text style={[styles.legendText, { color: theme.text }]}>Medium Risk</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendColor, { backgroundColor: '#ff0000' }]} />
-                <Text style={[styles.legendText, { color: theme.text }]}>High Risk</Text>
-              </View>
-            </View>
-          ) : (
+      {/* Collapsible Legend - Bottom Right */}
+      {(showHeatmap || (showMarkers && incidents.length > 0)) && (
+        <View style={[styles.legendContainer, { backgroundColor: theme.card + 'E6' }]}>
+          <TouchableOpacity 
+            style={[styles.legendHeader, { borderBottomColor: theme.border }]}
+            onPress={() => setLegendCollapsed(!legendCollapsed)}
+          >
+            <Text style={[styles.legendTitle, { color: theme.text }]}>
+              {showHeatmap ? 'Incident Types' : 'Incident Types'}
+            </Text>
+            <Ionicons 
+              name={legendCollapsed ? "chevron-up" : "chevron-down"} 
+              size={20} 
+              color={theme.text} 
+            />
+          </TouchableOpacity>
+          
+          {!legendCollapsed && (
             <View style={styles.legendItems}>
               {[...new Set(incidents.map(i => i.incident_type))].map(type => (
                 <View key={type} style={styles.legendItem}>
@@ -393,36 +426,38 @@ const SafetyHeatmap = forwardRef(({
         </View>
       )}
       
-      {/* Stats */}
-      <View style={[styles.statsContainer, { backgroundColor: theme.card + 'E6' }]}>
-        <Text style={[styles.statsText, { color: theme.text }]}>
-          {incidents.length} incident{incidents.length !== 1 ? 's' : ''} reported
-        </Text>
-        {selectedCampus && (
+      {/* Stats - only show when there are incidents */}
+      {incidents.length > 0 && (
+        <View style={[styles.statsContainer, { backgroundColor: theme.card + 'E6' }]}>
           <Text style={[styles.statsText, { color: theme.text }]}>
-            near {selectedCampus.name}
+            {incidents.length} incident{incidents.length !== 1 ? 's' : ''} reported
           </Text>
-        )}
-        {timeFilter && timeFilter !== 'all' && (
-          <Text style={[styles.statsText, { color: theme.text }]}>
-            in the last {timeFilter}
-          </Text>
-        )}
-      </View>
+          {selectedCampus && (
+            <Text style={[styles.statsText, { color: theme.text }]}>
+              near {selectedCampus.name}
+            </Text>
+          )}
+          {timeFilter && timeFilter !== 'all' && (
+            <Text style={[styles.statsText, { color: theme.text }]}>
+              in the last {timeFilter}
+            </Text>
+          )}
+        </View>
+      )}
     </View>
   );
 });
 
-// Helper function to get incident color
+// Helper function to get incident color - using more distinct colors
 const getIncidentColor = (incidentType) => {
   const colors = {
     'snake_bite': '#8B0000',     // Dark red - high danger
     'fire_attack': '#FF4500',    // Orange red - fire
     'assault': '#DC143C',        // Crimson - violence
-    'medical': '#FF1493',        // Deep pink - medical emergency
-    'harassment': '#FF6347',     // Tomato - harassment
+    'medical': '#00CED1',        // Dark turquoise - medical emergency
+    'harassment': '#9370DB',     // Medium purple - harassment
     'theft': '#FF8C00',          // Dark orange - theft
-    'pickpocketing': '#FFA500',  // Orange - pickpocketing
+    'pickpocketing': '#32CD32',  // Lime green - pickpocketing
     'vandalism': '#FFD700',      // Gold - vandalism
     'other': '#808080',          // Gray - other
   };
@@ -463,6 +498,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Montserrat-Regular',
   },
+  legendContainer: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    maxWidth: 200,
+    minWidth: 150,
+  },
+  legendHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderBottomWidth: 1,
+  },
   legend: {
     position: 'absolute',
     top: 20,
@@ -482,7 +537,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Montserrat-Bold',
   },
   legendItems: {
-    gap: 5,
+    padding: 12,
+    gap: 8,
   },
   legendItem: {
     flexDirection: 'row',

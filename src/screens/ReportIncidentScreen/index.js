@@ -258,19 +258,6 @@ export default function ReportIncidentScreen({ navigation }) {
       return;
     }
 
-    Animated.sequence([
-      Animated.timing(showSubmitAnimation, {
-        toValue: 0.8,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(showSubmitAnimation, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
     const timeString = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     const data = {
@@ -284,6 +271,8 @@ export default function ReportIncidentScreen({ navigation }) {
     };
 
     console.log("Submitted data: ", data);
+    
+    // Show confirmation modal first
     setShowConfirmationModal(true);
   };
 
@@ -314,15 +303,41 @@ export default function ReportIncidentScreen({ navigation }) {
       
       if (error) {
         console.error('Error creating incident:', error);
-        Alert.alert('Error', 'Failed to submit incident report. Please try again.');
+        Alert.alert(
+          'Error', 
+          `Failed to submit incident report: ${error.message || 'Unknown error'}`,
+          [{ text: 'OK' }]
+        );
         return;
       }
 
       console.log('Incident created successfully:', data);
+      
+      // Show success animation
+      Animated.sequence([
+        Animated.timing(showSubmitAnimation, {
+          toValue: 0.8,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(showSubmitAnimation, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Show success message
       Alert.alert(
         'Success', 
         'Incident report submitted successfully!',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        [{ 
+          text: 'OK', 
+          onPress: () => {
+            // Navigate back to home screen which will refresh the map
+            navigation.goBack();
+          }
+        }]
       );
 
     } catch (error) {

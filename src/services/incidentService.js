@@ -3,9 +3,51 @@ import { roleService } from './roleService';
 
 // Incident Services with Role-Based Access Control
 export const incidentService = {
+  // Ensure user exists in the database
+  async ensureUserExists(userId, userEmail = null) {
+    try {
+      // Check if user exists
+      const { data: existingUser, error: fetchError } = await supabase
+        .from(TABLES.USERS)
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      if (existingUser) {
+        return { data: existingUser, error: null };
+      }
+
+      // If user doesn't exist, create them
+      const { data: newUser, error: createError } = await supabase
+        .from(TABLES.USERS)
+        .insert([{
+          id: userId,
+          username: userEmail || `user_${userId.substring(0, 8)}`,
+          role: USER_ROLES.STUDENT, // Default role
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (createError) throw createError;
+      return { data: newUser, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+
   // Create a new incident report
   async createIncident(incidentData) {
     try {
+      // First ensure the user exists
+      const userResult = await this.ensureUserExists(incidentData.user_id);
+      if (userResult.error) {
+        console.error('Error ensuring user exists:', userResult.error);
+        return { data: null, error: userResult.error };
+      }
+
+      // Now create the incident
       const { data, error } = await supabase
         .from(TABLES.INCIDENTS)
         .insert([incidentData])
